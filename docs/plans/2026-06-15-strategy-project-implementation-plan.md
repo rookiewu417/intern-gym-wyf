@@ -43,7 +43,7 @@
 - [ ] **Step 1: 写 pixi.toml**
 
 ```toml
-[project]
+[workspace]
 name = "intern-gym-strategy"
 channels = ["conda-forge"]
 platforms = ["linux-64"]

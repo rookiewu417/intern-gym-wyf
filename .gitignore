@@ -14,3 +14,4 @@ strategy-project/data/processed/*
 strategy-project/reports/*
 !strategy-project/reports/.gitkeep
 .pixi/
+.vscode/

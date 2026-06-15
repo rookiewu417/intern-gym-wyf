@@ -20,3 +20,11 @@ def trade_cost(notional: float, side: str, model: dict[str, float]) -> float:
 def apply_slippage(price: float, side: str, model: dict[str, float]) -> float:
     direction = 1 if side == "buy" else -1
     return price * (1 + direction * float(model.get("slippage_bps", 0.0)) / 10_000.0)
+
+
+def scale_cost_model(model: dict[str, float], scale: float) -> dict[str, float]:
+    scaled = dict(model)
+    for key in ("buy_cost_bps", "sell_cost_bps", "slippage_bps", "min_fee"):
+        if key in scaled and isinstance(scaled[key], (int, float)):
+            scaled[key] = float(scaled[key]) * scale
+    return scaled

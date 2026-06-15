@@ -1,0 +1,12 @@
+services:
+  mock-feed:
+    build:
+      context: .
+      dockerfile: mock-feed/Dockerfile
+    environment:
+      XTMOCK_SILVER_ROOT: /app/sample-data
+      MARKET_SYMBOLS: 02723.HK,02675.HK,00100.HK,02513.HK,06082.HK
+      XTMOCK_REPLAY_SPEED: "0.02"
+      XTMOCK_REPLAY_MAX_EVENTS_PER_SUBSCRIPTION: "500"
+    ports:
+      - "9021:9021"

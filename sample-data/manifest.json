@@ -1,0 +1,46 @@
+{
+  "package": "market-terminal-internship-lab",
+  "generated_at": "2026-06-12T06:00:06+00:00",
+  "source_label": "silver-20260608-raw-parquet-overlay",
+  "symbols": [
+    "02723.HK",
+    "02675.HK",
+    "00100.HK",
+    "02513.HK",
+    "06082.HK"
+  ],
+  "tables": {
+    "silver_minute_bars_v1": {
+      "rows": 11935,
+      "format": "parquet"
+    },
+    "silver_trade_ticks_v1": {
+      "rows": 186851,
+      "format": "parquet"
+    },
+    "silver_broker_queue_v1": {
+      "rows": 7157,
+      "format": "parquet"
+    },
+    "silver_ccass_holdings_v1": {
+      "rows": 19444,
+      "format": "parquet"
+    },
+    "silver_daily_bars_v1": {
+      "rows": 63,
+      "format": "csv"
+    },
+    "silver_instruments_v1": {
+      "rows": 5,
+      "format": "csv"
+    },
+    "silver_broker_mapping_v1": {
+      "rows": 3249,
+      "format": "csv"
+    }
+  },
+  "notes": [
+    "This package is intentionally small and safe for internship exercises.",
+    "Do not use it for trading, production freshness checks, or financial decisions."
+  ]
+}

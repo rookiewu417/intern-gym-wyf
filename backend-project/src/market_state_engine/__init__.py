@@ -1,0 +1,2 @@
+"""Candidate backend project package."""
+

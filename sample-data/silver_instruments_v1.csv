@@ -1,0 +1,6 @@
+schema_version,symbol,name,source,ingest_ts,row_hash
+1,00100.HK,MINIMAX-W,xtquant.get_instrument_detail,2026-06-09T09:26:44.871+00:00,9028cd6e9c21b506325616f439be695828f18c84bb76bc2c6b7e335aa88e5e13
+1,02513.HK,智谱,xtquant.get_instrument_detail,2026-06-09T09:26:44.873+00:00,bfa4ca0c10578dc6a413114d779b35a10115339c00c037db9bd261ea6266ed0f
+1,02675.HK,精锋医疗－Ｂ,xtquant.get_instrument_detail,2026-06-09T09:26:44.874+00:00,0210a2745790b0397daf5ee9418c17b90e98db48aa1909bf2acb57eb77a4aac6
+1,02723.HK,深演智能,xtquant.get_instrument_detail,2026-06-09T09:26:44.885+00:00,f841f653dc4a9976e367634f46d28ce2566ba0cbe4d5a90bc06d3741ca89f267
+1,06082.HK,壁仞科技,xtquant.get_instrument_detail,2026-06-09T09:26:44.876+00:00,8c1521e851afb4d520c13d0a958ef43635ce535bc723125988122b27d60e1090

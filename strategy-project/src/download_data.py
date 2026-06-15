@@ -8,7 +8,11 @@ from urllib.request import urlopen
 
 import pandas as pd
 
+from daily_utils import normalize_daily as _normalize_daily
 from paths import RAW_DIR
+
+DAILY_COLUMNS = ["symbol", "trade_date", "open", "high", "low", "close",
+                 "volume", "turnover", "previous_close", "suspend_flag"]
 
 
 def normalize_date(value: str) -> str:
@@ -84,30 +88,29 @@ def normalize_universe(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_daily(frame: pd.DataFrame) -> pd.DataFrame:
-    result = frame.copy()
-    result["symbol"] = result["symbol"].astype(str).str.upper()
-    result["trade_date"] = result["trade_date"].map(normalize_date)
-    for column in ("open", "high", "low", "close", "volume", "turnover", "previous_close", "suspend_flag"):
-        if column not in result.columns:
-            result[column] = 0
-        result[column] = pd.to_numeric(result[column], errors="coerce").fillna(0)
-    return result[
-        ["symbol", "trade_date", "open", "high", "low", "close", "volume", "turnover", "previous_close", "suspend_flag"]
-    ].sort_values(["symbol", "trade_date"])
+    out = _normalize_daily(frame)
+    for col in DAILY_COLUMNS:
+        if col not in out.columns:
+            out[col] = pd.NA
+    return out[DAILY_COLUMNS].sort_values(["symbol", "trade_date"]).reset_index(drop=True)
 
 
 def coverage_summary(universe: pd.DataFrame, daily: pd.DataFrame) -> dict[str, object]:
-    daily_keys = daily[["symbol", "trade_date"]]
-    duplicate_keys = int(daily_keys.duplicated().sum())
-    daily_symbols = set(daily["symbol"].unique())
-    universe_symbols = set(universe["symbol"].unique())
+    from daily_utils import normalize_daily as nd
+    norm = nd(daily)
+    daily_keys = norm[["symbol", "trade_date"]]
+    universe_symbols = set(universe["symbol"].astype(str).str.upper().unique())
+    daily_symbols = set(norm["symbol"].unique())
     return {
         "symbol_count": int(len(universe_symbols)),
-        "daily_rows": int(len(daily)),
-        "date_min": str(daily["trade_date"].min() or ""),
-        "date_max": str(daily["trade_date"].max() or ""),
+        "daily_rows": int(len(norm)),
+        "date_min": str(norm["trade_date"].min() or ""),
+        "date_max": str(norm["trade_date"].max() or ""),
         "missing_daily_symbols": sorted(universe_symbols - daily_symbols),
-        "duplicate_daily_keys": duplicate_keys,
+        "duplicate_daily_keys": int(daily_keys.duplicated().sum()),
+        "suspended_rows": int((norm["suspend_flag"] == 1).sum()),
+        "zero_volume_rows": int((norm["volume"].fillna(0) == 0).sum()),
+        "missing_ohlc_rows": int(norm[["open", "high", "low", "close"]].isna().any(axis=1).sum()),
     }
 
 

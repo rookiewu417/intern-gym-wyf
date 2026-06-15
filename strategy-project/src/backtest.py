@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import statistics
 from dataclasses import replace
 
 import pandas as pd
@@ -12,7 +13,13 @@ from metrics import calculate_metrics, metrics_by_version
 from paths import PROCESSED_DIR, RAW_DIR, REPORTS_DIR
 from plots import write_plots
 from report_tables import stratify_by_quantile, write_report_template
-from stats import bootstrap_total_return_ci, permutation_selection_pvalue
+from stats import (
+    bootstrap_total_return_ci,
+    deflated_sharpe_ratio,
+    holm_correction,
+    permutation_selection_pvalue,
+    reality_check_pvalue,
+)
 from strategy import baseline_mask, generate_trades, improved_mask, reversal_mask
 
 VERSIONS = (
@@ -110,6 +117,49 @@ def external_coverage_from_features(features: pd.DataFrame) -> dict[str, float]:
     }
 
 
+def data_snooping_diagnostics(features, daily, cost_model, base_returns, config=DEFAULT) -> dict:
+    """对 grey sweep 候选集做 data-snooping 校正：reality-check p、Holm 最小校正 p、Deflated Sharpe。
+
+    候选 = 各暗盘门槛档（都从 baseline 动量信号池里挑子集，可比）；池 = baseline 池逐笔收益。
+    回答"在多个门槛里挑出的最佳表现，能否被'随机选同样笔数'解释（且已惩罚多重比较）"。
+    """
+    base = list(base_returns)
+    if not base:
+        return {}
+    cands = []  # (label, k, total_return, returns, sharpe)
+    for t in GREY_THRESHOLD_SWEEP:
+        cfg = replace(config, grey_premium_min=t)
+        tr = generate_trades(features, daily, cost_model, version="improved_grey_market_filter", mask=improved_mask, config=cfg)
+        rets = [float(x) for x in tr["return"].tolist()] if not tr.empty else []
+        if not rets:
+            continue
+        total = math.prod(1.0 + x for x in rets) - 1.0
+        sd = statistics.stdev(rets) if len(rets) >= 2 else 0.0
+        sharpe = statistics.fmean(rets) / sd if sd > 0 else float("nan")
+        cands.append((f"grey>={t:g}", len(rets), total, rets, sharpe))
+    if not cands:
+        return {}
+    ks = [k for _, k, _, _, _ in cands]
+    observed_best = max(total for _, _, total, _, _ in cands)
+    per_p = {lab: permutation_selection_pvalue(base, k, total) for lab, k, total, _, _ in cands}
+    holm = holm_correction(per_p)
+    sharpes = [s for *_, s in cands if s == s]  # 去 NaN
+    sharpe_var = statistics.variance(sharpes) if len(sharpes) >= 2 else 0.0
+    n_trials = len(VERSIONS) + len(GREY_THRESHOLD_SWEEP)  # 保守下界：不含历史已移除的 multifactor
+    imp = next((rets for lab, _, _, rets, _ in cands if lab == "grey>=0"), [])
+    dsr = deflated_sharpe_ratio(imp, n_trials, sharpe_var) if imp else None
+    return {
+        "reality_check_pvalue": reality_check_pvalue(base, ks, observed_best),
+        "holm_min_adjusted_pvalue": min(holm.values()) if holm else float("nan"),
+        "holm_adjusted_pvalues": holm,
+        "deflated_sharpe_ratio": dsr,
+        "n_trials": n_trials,
+        "observed_best_total_return": observed_best,
+        "dsr_strategy": "improved_grey_market_filter@grey>=0",
+        "dsr_n_obs": len(imp),
+    }
+
+
 def main() -> int:
     features = pd.read_parquet(PROCESSED_DIR / "features.parquet")
     daily = pd.read_parquet(RAW_DIR / "daily_bars.parquet")
@@ -147,6 +197,7 @@ def main() -> int:
         for v in ("improved_grey_market_filter",)
         if v in by_version and base_returns
     }
+    data_snooping = data_snooping_diagnostics(features, daily, cost_model, base_returns)
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     charts = write_plots(REPORTS_DIR, trades=trades, trades_grey=trades_grey, features=features, sweep=sweep)
@@ -158,6 +209,7 @@ def main() -> int:
         "grey_return_spearman": grey_corr,
         "total_return_ci": total_return_ci,
         "selection_pvalue": selection_pvalue,
+        "data_snooping": data_snooping,
         "external_coverage": ext_cov,
     }
     (REPORTS_DIR / "metrics.json").write_text(
@@ -168,7 +220,7 @@ def main() -> int:
         by_version=by_version, sensitivity=sensitivity, coverage=coverage, cost_model=cost_model,
         sub_stratification=sub_strat, grey_stratification=grey_strat, grey_corr=grey_corr,
         grey_sweep=sweep,
-        total_return_ci=total_return_ci, selection_pvalue=selection_pvalue, charts=charts,
+        total_return_ci=total_return_ci, selection_pvalue=selection_pvalue, data_snooping=data_snooping, charts=charts,
     )
     print(json.dumps(_json_safe(metrics_payload), ensure_ascii=False, indent=2))
     return 0

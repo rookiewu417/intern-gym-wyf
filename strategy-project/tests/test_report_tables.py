@@ -1,5 +1,5 @@
 import pandas as pd
-from report_tables import _analysis, comparison_table, grey_sweep_table, robustness_table, sensitivity_table, stratify_by_quantile
+from report_tables import _analysis, comparison_table, data_snooping_section, grey_sweep_table, robustness_table, sensitivity_table, stratify_by_quantile
 
 _BY_VER = {
     "baseline_first_day_momentum_daily": {"trade_count": 14, "win_rate": 0.28, "total_return": -0.15, "profit_factor": 0.93},
@@ -74,3 +74,20 @@ def test_stratify_by_quantile_groups():
     out = stratify_by_quantile(trades, "public_subscription_multiple", bins=2)
     assert len(out) >= 1
     assert "count" in out.columns and "avg_return" in out.columns
+
+
+def test_data_snooping_section_flags_overfit_when_pvalue_large():
+    diag = {"reality_check_pvalue": 0.62, "holm_min_adjusted_pvalue": 0.8,
+            "deflated_sharpe_ratio": 0.1, "n_trials": 9,
+            "observed_best_total_return": 0.4279, "dsr_n_obs": 12}
+    md = data_snooping_section(diag)
+    assert "0.62" in md  # reality-check p 出现
+    assert "不显著" in md  # 判语指向：校正后表观最优不显著（可由 data-snooping 解释）
+
+
+def test_data_snooping_section_handles_dsr_none():
+    diag = {"reality_check_pvalue": 0.62, "holm_min_adjusted_pvalue": 0.8,
+            "deflated_sharpe_ratio": None, "n_trials": 9,
+            "observed_best_total_return": 0.4279, "dsr_n_obs": 2}
+    md = data_snooping_section(diag)
+    assert "N/A" in md  # DSR 样本太小时退化显示

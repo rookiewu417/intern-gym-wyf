@@ -58,6 +58,36 @@ def robustness_table(by_version: dict, total_return_ci: dict, selection_pvalue: 
     return _tab.tabulate(rows, headers=["version", "total_return", "95% CI", "选股 p"], tablefmt="pipe", disable_numparse=True)
 
 
+def data_snooping_section(diag: dict) -> str:
+    """多重检验 / data-snooping 稳健性小节（表格 + 自动判语）。"""
+    import tabulate as _tab
+
+    if not diag:
+        return "(无 data-snooping 诊断)"
+    rc = float(diag.get("reality_check_pvalue", float("nan")))
+    holm = float(diag.get("holm_min_adjusted_pvalue", float("nan")))
+    dsr = diag.get("deflated_sharpe_ratio")
+    n_trials = int(diag.get("n_trials", 0))
+    obs = float(diag.get("observed_best_total_return", 0.0))
+    n_obs = int(diag.get("dsr_n_obs", 0))
+    dsr_str = f"{dsr:.3f}" if isinstance(dsr, (int, float)) else "N/A（样本太小）"
+    rows = [
+        ["max-statistic 置换 p（White RC 风格）", f"{rc:.3f}", f"最佳档 total_return={obs:.1%} 在 {n_trials} 个配置多重比较下的显著性"],
+        ["Holm 最小校正 p", f"{holm:.3f}", "各门槛单独置换 p 经 Holm step-down 后的最小值"],
+        ["Deflated Sharpe Ratio", dsr_str, f"improved {n_obs} 笔；N={n_trials} 试验校正后 Sharpe 是否显著"],
+    ]
+    table = _tab.tabulate(rows, headers=["检验", "值", "含义"], tablefmt="pipe", disable_numparse=True)
+    overfit = (rc != rc) or rc > 0.1 or (dsr is None) or (isinstance(dsr, (int, float)) and dsr < 0.5)
+    if overfit:
+        verdict = (
+            "**校正后最佳策略不显著**：试了多个策略×门槛后挑出的表观最优，可由 data-snooping"
+            "（多重试验后选最好）解释——进一步坐实本样本无稳健 alpha。"
+        )
+    else:
+        verdict = "校正后最佳策略仍显著（本样本罕见，需警惕巧合）。"
+    return f"{table}\n\n{verdict}"
+
+
 def stratify_by_quantile(trades: pd.DataFrame, column: str, *, bins: int = 3) -> pd.DataFrame:
     work = trades.dropna(subset=[column]).copy()
     if work.empty:
@@ -141,6 +171,7 @@ def write_report_template(
     grey_sweep: dict[float, dict[str, float]] | None = None,
     total_return_ci: dict | None = None,
     selection_pvalue: dict | None = None,
+    data_snooping: dict | None = None,
     charts: dict[str, str] | None = None,
 ) -> None:
     by_version = by_version or {}
@@ -153,6 +184,7 @@ def write_report_template(
         sens_md = "(无敏感性数据)"
     sweep_md = grey_sweep_table(grey_sweep) if grey_sweep else "(无阈值扫描数据)"
     robust_md = robustness_table(by_version, total_return_ci or {}, selection_pvalue or {}) if by_version else "(无诊断数据)"
+    ds_md = data_snooping_section(data_snooping or {})
     cov_md = "\n".join(f"- {k}: {v}" for k, v in (coverage or {}).items()) or "(无 coverage)"
     sub_md = _md(sub_stratification, "(无分层数据)")
     grey_strat_md = _md(grey_stratification, "(无暗盘分层数据)")
@@ -215,6 +247,12 @@ API 下载覆盖、缺失/停牌/无成交，及自行调研的 IPO/暗盘来源
 > CI 越宽=点估计越不可信；选股 p 越大=该因子选股不比随机选同等数量更好（疑过拟合/噪声）。
 
 {robust_md}
+
+### 多重检验 / Data-snooping 稳健性
+
+> 校正"在多个策略×门槛配置里挑最好"的选择偏差——本研究唯一仍敞着的过拟合口子。N 为保守下界（不含历史已移除的 multifactor，计入则惩罚更重）。
+
+{ds_md}
 
 ### 暗盘溢价分层 + 相关性
 

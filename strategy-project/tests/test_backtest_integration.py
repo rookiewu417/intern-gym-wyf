@@ -63,3 +63,8 @@ def test_run_backtest_writes_outputs(tmp_path, monkeypatch):
     assert (reports / "grey_threshold_sweep.png").exists()
     report_text = (reports / "research_report.md").read_text()
     assert "买入 12bps" in report_text and "卖出 22bps" in report_text  # 报告列出具体成本数值
+    # data-snooping 验证层：metrics 含诊断键 + 报告含多重检验小节
+    assert "data_snooping" in metrics
+    ds = metrics["data_snooping"]
+    assert "reality_check_pvalue" in ds and "deflated_sharpe_ratio" in ds
+    assert "Data-snooping" in report_text

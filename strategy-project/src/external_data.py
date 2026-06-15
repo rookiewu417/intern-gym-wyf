@@ -38,15 +38,3 @@ def _read(path: Path, cols: tuple[str, ...]) -> pd.DataFrame:
 def load_external(root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     root = Path(root)
     return _read(root / "ipo_info.csv", IPO_COLS), _read(root / "grey_market.csv", GREY_COLS)
-
-
-def external_coverage(universe: pd.DataFrame, frame: pd.DataFrame, *, key: str, label: str) -> dict:
-    total = int(universe["symbol"].astype(str).str.upper().nunique())
-    present = 0
-    if not frame.empty and key in frame.columns:
-        present = int(frame.loc[frame[key].notna(), "symbol"].nunique())
-    return {
-        f"{label}_total_symbols": total,
-        f"{label}_with_{key}": present,
-        f"{label}_coverage_ratio": (present / total) if total else 0.0,
-    }

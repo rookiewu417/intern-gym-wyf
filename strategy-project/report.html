@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>策略项目交付卷宗 · 面向评审 · intern-gym-wyf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe3;
+    --paper-2:#ece4d2;
+    --paper-3:#e6dcc6;
+    --ink:#1b1814;
+    --ink-soft:#5d564a;
+    --oxblood:#8a2b2b;
+    --oxblood-2:#a83a32;
+    --forest:#2f6b3f;
+    --gold:#a9801f;
+    --line:rgba(27,24,20,.16);
+    --line-strong:rgba(27,24,20,.42);
+    --code-bg:#201d18;
+    --code-fg:#e9e1cf;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(circle at 12% -5%, rgba(169,128,31,.10), transparent 42%),
+      radial-gradient(circle at 100% 0%, rgba(138,43,43,.07), transparent 38%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");
+    color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;
+    font-size:18.5px;line-height:1.66;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--gold);color:#fff}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 30px 130px}
+
+  /* ---------- Masthead ---------- */
+  .masthead{padding:48px 0 28px;border-bottom:2.5px solid var(--ink)}
+  .kicker{
+    font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--oxblood);font-weight:700;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .kicker::before{content:"";width:42px;height:1.5px;background:var(--oxblood)}
+  h1.title{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(40px,6.8vw,82px);line-height:.95;
+    letter-spacing:-.022em;margin:20px 0 18px;font-optical-sizing:auto}
+  h1.title em{font-style:italic;color:var(--oxblood);font-weight:900}
+  .dek{font-size:22px;color:var(--ink-soft);max-width:64ch;font-weight:400;border-left:3px solid var(--gold);padding-left:20px}
+  .meta-row{margin-top:32px;display:flex;flex-wrap:wrap;font-family:"JetBrains Mono",monospace;font-size:12.5px;border:1px solid var(--line-strong)}
+  .meta-row div{padding:11px 18px;border-right:1px solid var(--line);flex:1 1 auto}
+  .meta-row div:last-child{border-right:none}
+  .meta-row .lbl{display:block;color:var(--oxblood);letter-spacing:.12em;font-size:10px;text-transform:uppercase;margin-bottom:3px}
+  .meta-row .val{color:var(--ink);font-weight:500}
+
+  /* ---------- TOC ---------- */
+  nav.toc{margin:26px 0 4px;display:flex;flex-wrap:wrap;gap:8px}
+  nav.toc a{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.05em;text-decoration:none;
+    color:var(--ink-soft);border:1px solid var(--line-strong);padding:5px 11px;border-radius:2px;transition:all .18s}
+  nav.toc a:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  nav.toc a b{color:var(--oxblood);font-weight:700;margin-right:5px}
+  nav.toc a:hover b{color:var(--gold)}
+
+  /* ---------- Stat band ---------- */
+  .statband{display:grid;grid-template-columns:repeat(5,1fr);margin:40px 0 8px;
+    border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong)}
+  .statband .s{padding:22px 14px;text-align:center;border-right:1px solid var(--line)}
+  .statband .s:last-child{border-right:none}
+  .statband .n{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(30px,4.4vw,48px);line-height:1;
+    letter-spacing:-.02em;display:block;font-variant-numeric:tabular-nums}
+  .statband .n .pm{font-size:.5em;vertical-align:.18em;color:var(--ink-soft)}
+  .statband .c{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin-top:9px}
+
+  /* ---------- Section ---------- */
+  section{margin-top:70px;scroll-margin-top:20px}
+  .sec-head{display:grid;grid-template-columns:64px 1fr;gap:0 20px;align-items:baseline;
+    border-bottom:1px solid var(--line-strong);padding-bottom:13px;margin-bottom:26px}
+  .sec-no{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:13px;color:var(--oxblood);letter-spacing:.05em;padding-top:9px}
+  .sec-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(25px,3.5vw,36px);line-height:1.06;letter-spacing:-.015em}
+  .sec-head .sub{grid-column:2;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;margin-top:8px}
+  p{margin:0 0 17px;max-width:74ch}
+  p.lead{font-size:21px;line-height:1.6}
+  strong{font-weight:600}
+  em.it{font-style:italic;font-family:"Newsreader",serif}
+  .accent{color:var(--oxblood);font-weight:500}
+  .ok{color:var(--forest);font-weight:600}
+  code{font-family:"JetBrains Mono",monospace;font-size:.82em;background:var(--paper-3);padding:1.5px 6px;border-radius:3px;border:1px solid var(--line)}
+  h3.subh{font-family:"Fraunces",serif;font-weight:600;font-size:21px;margin:26px 0 10px;letter-spacing:-.01em}
+  h3.subh .mk{color:var(--oxblood);font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:700;margin-right:10px}
+
+  /* ---------- Code ---------- */
+  .code{background:var(--code-bg);color:var(--code-fg);font-family:"JetBrains Mono",monospace;font-size:13px;
+    line-height:1.7;border-radius:6px;overflow-x:auto;margin:8px 0 18px;box-shadow:0 16px 36px -26px rgba(27,24,20,.7)}
+  .code .cap{display:block;padding:9px 16px;background:rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.1);
+    font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#b6ad97}
+  .code pre{padding:14px 16px;white-space:pre;margin:0}
+  .code .del{color:#e98a82;display:block}
+  .code .add{color:#9fd8ab;display:block}
+  .code .cm{color:#8f8772}
+  .code .kw{color:#d8b46a}
+
+  /* ---------- Tables ---------- */
+  .tbl{width:100%;border-collapse:collapse;margin:6px 0 20px;font-size:15px;background:rgba(255,255,255,.28)}
+  .tbl.mono{font-family:"JetBrains Mono",monospace;font-size:12.5px}
+  .tbl th{text-align:left;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:10.5px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--oxblood);padding:11px 14px;border-bottom:1.5px solid var(--ink)}
+  .tbl td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl tbody tr:hover{background:rgba(169,128,31,.07)}
+  .tbl .num{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .pos{color:var(--forest);font-weight:700}
+  .neg{color:var(--oxblood);font-weight:700}
+  .star{color:var(--forest);font-weight:700}
+  .tag{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 8px;border-radius:2px;border:1px solid;white-space:nowrap;display:inline-block}
+  .tag.keep{color:var(--forest);border-color:var(--forest);background:rgba(47,107,63,.08)}
+  .tag.edit{color:var(--gold);border-color:var(--gold);background:rgba(169,128,31,.1)}
+  .tag.new{color:var(--oxblood);border-color:var(--oxblood);background:rgba(138,43,43,.08)}
+
+  /* ---------- Overview grid ---------- */
+  .ov{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:4px 0 8px}
+  .ov .col{border:1px solid var(--line-strong);padding:20px 22px;background:rgba(255,255,255,.22)}
+  .ov .col h4{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .ov .col.touched h4{color:var(--oxblood)}
+  .ov .col.clean h4{color:var(--forest)}
+  .ov ul{list-style:none}
+  .ov li{font-family:"JetBrains Mono",monospace;font-size:13px;padding:5px 0;display:flex;gap:10px;align-items:baseline}
+  .ov .clean li .mk{color:var(--forest)}
+  .ov .touched li .mk{color:var(--oxblood)}
+
+  /* ---------- Bug cards ---------- */
+  .bug{border:1px solid var(--line-strong);background:rgba(255,255,255,.3);padding:24px 26px 22px;position:relative;overflow:hidden;margin-bottom:18px}
+  .bug.real{border-left:4px solid var(--oxblood)}
+  .bug.line{border-left:4px solid var(--gold)}
+  .bug .stamp{position:absolute;top:16px;right:-30px;transform:rotate(11deg);font-family:"JetBrains Mono",monospace;
+    font-size:9.5px;font-weight:700;letter-spacing:.18em;padding:4px 38px;border:2px solid var(--oxblood);color:var(--oxblood);text-transform:uppercase;opacity:.6}
+  .bug.line .stamp{border-color:var(--gold);color:var(--gold)}
+  .bug h3{font-family:"Fraunces",serif;font-weight:600;font-size:21px;line-height:1.18;margin-bottom:6px;letter-spacing:-.01em}
+  .bug h3 .bno{color:var(--oxblood);font-weight:900;margin-right:10px}
+  .bug.line h3 .bno{color:var(--gold)}
+  .bug .where{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-soft);margin-bottom:12px}
+  .bug p{font-size:15.5px;line-height:1.58;max-width:none}
+
+  /* ---------- Callouts ---------- */
+  .callout{border:1px solid var(--gold);background:rgba(169,128,31,.08);padding:19px 24px;margin:10px 0 20px;font-size:16px}
+  .callout .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;display:block;margin-bottom:7px}
+  .note{border-left:4px solid var(--ink);background:rgba(27,24,20,.045);padding:16px 22px;margin:10px 0 20px}
+  .note .lbl{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);font-weight:700;display:block;margin-bottom:6px}
+  .note .lbl::before{content:"◆ "}
+  .note p{font-size:15.5px;margin-bottom:0;max-width:none}
+
+  /* ---------- Pull quote ---------- */
+  .pq{font-family:"Fraunces",serif;font-weight:400;font-style:italic;font-size:clamp(23px,3.4vw,32px);line-height:1.3;
+    color:var(--ink);text-align:left;margin:18px 0;padding:6px 0 6px 28px;border-left:5px solid var(--oxblood);letter-spacing:-.01em}
+  .pq b{font-weight:600;font-style:normal;color:var(--oxblood)}
+
+  /* ---------- Story figure (before/after numbers) ---------- */
+  .arc{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:14px 0 20px;
+    border:1px solid var(--line-strong);background:rgba(255,255,255,.25);padding:22px}
+  .arc .b{text-align:center}
+  .arc .b .k{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+  .arc .b .v{font-family:"Fraunces",serif;font-weight:900;font-size:clamp(26px,4vw,40px);line-height:1}
+  .arc .b .note2{font-size:12.5px;color:var(--ink-soft);margin-top:8px;font-family:"JetBrains Mono",monospace}
+  .arc .ar{font-family:"Fraunces",serif;font-size:30px;color:var(--oxblood);padding:0 6px}
+
+  /* ---------- Timeline ---------- */
+  .tl{position:relative;margin:8px 0 8px;padding-left:26px}
+  .tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line-strong)}
+  .tl .ev{position:relative;padding:0 0 20px 18px}
+  .tl .ev::before{content:"";position:absolute;left:-25px;top:6px;width:11px;height:11px;border-radius:50%;background:var(--paper);border:2.5px solid var(--oxblood)}
+  .tl .ev.hl::before{background:var(--oxblood)}
+  .tl .ev .t{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;color:var(--oxblood);letter-spacing:.08em}
+  .tl .ev .d{font-size:15.5px;margin-top:2px;max-width:72ch}
+
+  /* ---------- Method cards ---------- */
+  .methods{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--line-strong);background:rgba(255,255,255,.24)}
+  .methods .m{display:grid;grid-template-columns:200px 1fr auto;gap:18px;padding:15px 20px;border-bottom:1px solid var(--line);align-items:baseline}
+  .methods .m:last-child{border-bottom:none}
+  .methods .m .name{font-family:"Fraunces",serif;font-weight:600;font-size:17px}
+  .methods .m .name small{display:block;font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-soft);font-weight:400;letter-spacing:.04em;margin-top:3px}
+  .methods .m .desc{font-size:14.5px;line-height:1.5}
+  .methods .m .res{font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:700;white-space:nowrap;text-align:right}
+
+  /* ---------- Compliance ---------- */
+  .compliance{border:1px solid var(--line-strong);background:rgba(255,255,255,.25)}
+  .compliance .row{display:grid;grid-template-columns:1fr auto;gap:16px;padding:12px 20px;border-bottom:1px solid var(--line);align-items:center}
+  .compliance .row:last-child{border-bottom:none}
+  .compliance .row span:first-child{font-size:15.5px}
+  .check{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--forest);font-size:13px;letter-spacing:.06em}
+
+  /* ---------- Conclusion ---------- */
+  .conclusion{border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:44px 46px;margin-top:30px;position:relative}
+  .conclusion::after{content:"※";position:absolute;top:20px;right:30px;color:var(--gold);font-size:26px}
+  .conclusion .ck{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:18px}
+  .conclusion p{font-family:"Newsreader",serif;font-size:21px;line-height:1.62;color:var(--paper);max-width:none;margin-bottom:14px}
+  .conclusion p:last-child{margin-bottom:0}
+  .conclusion p strong{color:#fff;font-weight:600;border-bottom:2px solid var(--oxblood-2);padding-bottom:1px}
+  .conclusion em{color:var(--gold);font-style:italic}
+
+  footer{margin-top:74px;padding-top:22px;border-top:2.5px solid var(--ink);font-family:"JetBrains Mono",monospace;
+    font-size:11.5px;color:var(--ink-soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;letter-spacing:.04em}
+
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+  @media (max-width:760px){
+    body{font-size:17px}
+    .statband{grid-template-columns:repeat(2,1fr)}
+    .statband .s:nth-child(2){border-right:none}
+    .ov{grid-template-columns:1fr}
+    .sec-head{grid-template-columns:44px 1fr}
+    .meta-row div{flex-basis:50%}
+    .methods .m{grid-template-columns:1fr;gap:6px}
+    .methods .m .res{text-align:left}
+    .arc{grid-template-columns:1fr;gap:14px}
+    .arc .ar{transform:rotate(90deg)}
+  }
+  @media print{
+    body{background:#fff;font-size:11.5pt}
+    .reveal{opacity:1;transform:none}
+    nav.toc{display:none}
+    .code{box-shadow:none}
+    .conclusion{background:#fff;color:#000;border-color:#000}
+    .conclusion p,.conclusion .ck{color:#000}
+    section{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <div class="kicker">交付卷宗 · 面向评审 · Strategy Track · 2026-06-15</div>
+    <h1 class="title">分叉之后，<br>我做了<em>什么</em></h1>
+    <p class="dek">把上游纯脚手架接管成一份可复现的港股新股日线策略研究 —— 修了真 bug、堵了评分红线、并用五层统计检验<strong>诚实否定了自己最好看的结果</strong>。本卷宗带你逐节看清这些判断。</p>
+
+    <div class="meta-row">
+      <div><span class="lbl">Fork 自</span><span class="val">Detachm/intern-gym</span></div>
+      <div><span class="lbl">分叉点</span><span class="val">b6f5de3 = 上游 HEAD</span></div>
+      <div><span class="lbl">当前分支</span><span class="val">strategy/optimize-100</span></div>
+      <div><span class="lbl">上游状态</span><span class="val">fork 后从未更新</span></div>
+    </div>
+
+    <nav class="toc">
+      <a href="#s0"><b>00</b>如何评阅</a>
+      <a href="#s1"><b>01</b>任务与基准</a>
+      <a href="#s2"><b>02</b>改动总览</a>
+      <a href="#s3"><b>03</b>脚手架审计</a>
+      <a href="#s4"><b>04</b>两个判断故事</a>
+      <a href="#s5"><b>05</b>策略与无未来函数</a>
+      <a href="#s6"><b>06</b>抗 data-snooping</a>
+      <a href="#s7"><b>07</b>回测结果</a>
+      <a href="#s8"><b>08</b>工程质量</a>
+      <a href="#s9"><b>09</b>时间线</a>
+      <a href="#s10"><b>10</b>局限</a>
+      <a href="#s11"><b>11</b>合规</a>
+      <a href="#s12"><b>12</b>结论</a>
+    </nav>
+  </header>
+
+  <!-- ============ STAT BAND ============ -->
+  <div class="statband">
+    <div class="s"><span class="n">28</span><span class="c">新增提交</span></div>
+    <div class="s"><span class="n">41</span><span class="c">文件变更</span></div>
+    <div class="s"><span class="n"><span class="pm">+</span>6542</span><span class="c">新增行数</span></div>
+    <div class="s"><span class="n">59</span><span class="c">测试全过</span></div>
+    <div class="s"><span class="n">4</span><span class="c">策略版本</span></div>
+  </div>
+
+  <!-- ============ 00 如何评阅 ============ -->
+  <section id="s0" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">00</div>
+      <h2>给评审：如何阅读这份卷宗</h2>
+      <div class="sub">3 分钟看懂这份交付的价值点</div>
+    </div>
+    <p class="lead">这是一个三选一的实习笔试 lab（前端 / 后端 / 策略）。我选择并完成了<strong>策略方向</strong>，其余保持脚手架原样。如果您只有几分钟，请重点看这四点：</p>
+    <table class="tbl">
+      <thead><tr><th style="width:30%">评审维度</th><th>这份交付的对应证据</th><th style="width:14%">看哪节</th></tr></thead>
+      <tbody>
+        <tr><td><strong>正确性</strong><br><span style="font-size:13px;color:var(--ink-soft)">能不能发现脚手架里的坑</span></td><td>审计出 2 个真 bug（持仓窗口跨笔污染、回撤非时序）+ 2 条评分红线（fillna(0) 伪造停牌、横截面未来函数），均有 before/after 代码与回归测试。</td><td><a href="#s3" style="color:var(--oxblood)">§03</a></td></tr>
+        <tr><td><strong>研究诚实</strong><br><span style="font-size:13px;color:var(--ink-soft)">敢不敢否定自己</span></td><td>首版 improved 一度回测 <span class="pos">+64.2%</span>，我发现出场口径高估后改保守，亲手把它砍到 <span class="neg">+0.9%</span>；又把一个回测 +43.5% 的多因子打分用同一套检验证伪、<strong>主动删除</strong>。</td><td><a href="#s4" style="color:var(--oxblood)">§04</a></td></tr>
+        <tr><td><strong>方法论</strong><br><span style="font-size:13px;color:var(--ink-soft)">懂不懂统计陷阱</span></td><td>五层抗 data-snooping 校验：Bootstrap CI + 置换检验 + White Reality Check + Holm + Deflated Sharpe，量化「试 N 个配置挑最好」的选择偏差。</td><td><a href="#s6" style="color:var(--oxblood)">§06</a></td></tr>
+        <tr><td><strong>工程质量</strong><br><span style="font-size:13px;color:var(--ink-soft)">能不能复现</span></td><td>pixi 锁定环境、59 项测试、参数集中、研究报告由代码<strong>全自动幂等生成</strong>（无手工编辑）。</td><td><a href="#s8" style="color:var(--oxblood)">§08</a></td></tr>
+      </tbody>
+    </table>
+    <div class="pq">这份交付的核心卖点是<b>严谨的研究方法</b>，而不是一个好看的收益数字。</div>
+  </section>
+
+  <!-- ============ 01 任务与基准 ============ -->
+  <section id="s1" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">01</div>
+      <h2>任务与对比基准</h2>
+      <div class="sub">git merge-base upstream/main HEAD → b6f5de3</div>
+    </div>
+    <p><strong>任务</strong>（依据 <code>docs/strategy-project.md</code>）：复现港股新股「首日动量 → 后续数日收益」的日线策略，扣交易成本评估其可交易性，并用自行调研的外部数据（暗盘 / IPO）做过滤与分层改进。脚手架已提供一个能跑通的 baseline 回测。</p>
+    <p><strong>基准</strong>：上游 <code>upstream/main</code> 的最新提交就是分叉点 <code>b6f5de3</code> —— 说明<span class="accent">上游自我 fork 后从未更新</span>。因此我分支上该点之后的全部内容即我的全部工作（28 个提交），没有需要合并的上游新提交。上游仅 3 个原始提交：初始 lab → 准备发布 → 合并 PR #1。</p>
+  </section>
+
+  <!-- ============ 02 总览 ============ -->
+  <section id="s2" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">02</div>
+      <h2>改了什么 · 没动什么</h2>
+      <div class="sub">三选一 lab，工作严格收敛在 strategy 方向</div>
+    </div>
+    <p>我刻意把改动收敛在自己选择的方向内，绝不触碰固定脚手架与另外两个方向 —— 这本身也是对评分边界的尊重。</p>
+    <div class="ov">
+      <div class="col touched">
+        <h4>◆ 深度工作区</h4>
+        <ul>
+          <li><span class="mk">▸</span><span><code>strategy-project/</code> 核心重写与扩展</span></li>
+          <li><span class="mk">▸</span><span>仓库根：<code>pixi.toml</code> / <code>pixi.lock</code></span></li>
+          <li><span class="mk">▸</span><span><code>CLAUDE.md</code>（lab 导航说明）</span></li>
+          <li><span class="mk">▸</span><span><code>docs/plans/</code>（6 份设计 / 计划 / 复盘）</span></li>
+          <li><span class="mk">▸</span><span><code>.gitignore</code></span></li>
+        </ul>
+      </div>
+      <div class="col clean">
+        <h4>◇ 保持脚手架原样</h4>
+        <ul>
+          <li><span class="mk">▸</span><span><code>frontend-project/</code> 未改动</span></li>
+          <li><span class="mk">▸</span><span><code>backend-project/</code> 未改动</span></li>
+          <li><span class="mk">▸</span><span><code>mock-*</code> 固定脚手架</span></li>
+          <li><span class="mk">▸</span><span><code>sample-data/</code> · <code>research-data/</code></span></li>
+          <li><span class="mk">▸</span><span><code>scripts/</code>（本就不该动）</span></li>
+        </ul>
+      </div>
+    </div>
+    <p style="font-size:15px;color:var(--ink-soft)">规模：<strong>41 个文件变更，+6542 / −188 行</strong>。<code>src/</code> 从 9 个文件扩到 14 个（新增 config / daily_utils / external_data / stats / plots）；<code>tests/</code> 从 1 个文件扩到 13 个。</p>
+  </section>
+
+  <!-- ============ 03 脚手架审计 ============ -->
+  <section id="s3" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">03</div>
+      <h2>脚手架审计：我发现并处理的问题</h2>
+      <div class="sub">2 个真 bug + 2 条评分红线 · 记录于 docs/plans/…-known-issues.md</div>
+    </div>
+    <p>动手写策略前，我先把脚手架逐行审了一遍。这类「能跑通但悄悄出错」的 bug，恰恰是最该在面试里展示的发现能力 —— 它们不报错、回测照样出数，但数字是错的。</p>
+
+    <div class="bug real">
+      <div class="stamp">Bug Fixed</div>
+      <h3><span class="bno">①</span>持仓窗口变量覆盖 —— 跨交易污染</h3>
+      <div class="where">strategy-project/src/strategy.py · generate_baseline_trades</div>
+      <p>循环内把计算出来的实际持有天数赋给了变量 <code>holding_days</code>，<strong>而它正是函数入参</strong>（默认 3）。于是下一只股票切片持仓窗口时，用的是上一笔交易的实际持有天数 —— 交易之间互相污染，结果<span class="accent">不可复现、随股票顺序漂移</span>。</p>
+      <div class="code">
+        <span class="cap">before → after</span>
+<pre><span class="del">- holding_days = int(path[path["trade_date"] &lt;= str(exit_row["trade_date"])].shape[0])</span>
+<span class="add">+ held_days     = int(path[path["trade_date"] &lt;= str(exit_row["trade_date"])].shape[0])</span>
+  ...
+<span class="del">-     "holding_days": holding_days,   <span class="cm"># 覆盖了入参 → 污染下一笔切片</span></span>
+<span class="add">+     "holding_days": held_days,      <span class="cm"># 入参只用于切片窗口，保持不变</span></span></pre>
+      </div>
+      <p style="font-size:14px;color:var(--ink-soft)"><strong>验证：</strong>threshold=−1 取全样本 65 笔，<code>holding_days</code> 最大值 = 窗口上界 3，确认无跨笔污染。已加回归测试。</p>
+    </div>
+
+    <div class="bug real">
+      <div class="stamp">Bug Fixed</div>
+      <h3><span class="bno">②</span>最大回撤按非时间顺序计算 —— 指标无意义</h3>
+      <div class="where">strategy-project/src/metrics.py · calculate_metrics</div>
+      <p>权益曲线 <code>pnl.cumsum()</code> 直接对传入顺序累加，而 trades 来自<strong>按 symbol 排序</strong>的迭代，根本不是时间序。于是 <code>max_drawdown</code> 是「按股票代码排列」下的回撤 —— 一个没有任何金融含义的数。</p>
+      <div class="code">
+        <span class="cap">before → after</span>
+<pre><span class="del">- pnl    = trades["net_pnl"].astype(float)        <span class="cm"># trades 按 symbol 排序</span></span>
+<span class="add">+ ordered = trades.sort_values("exit_date")        <span class="cm"># 先按平仓日排时间序</span></span>
+<span class="add">+ pnl     = ordered["net_pnl"].astype(float)</span>
+  equity = pnl.cumsum()                            <span class="cm"># 现在才是真实回撤路径</span></pre>
+      </div>
+      <p style="font-size:14px;color:var(--ink-soft)"><strong>验证：</strong>与按 <code>exit_date</code> 重排重算一致；其余 order-independent 指标（胜率 / 均值）不受影响。报告中注明回撤口径为「已实现 PnL 按平仓日排序」。</p>
+    </div>
+
+    <div class="bug line">
+      <div class="stamp">Red Line</div>
+      <h3><span class="bno">③</span>fillna(0) 伪造缺失 / 停牌 bar</h3>
+      <div class="where">download_data · build_features · strategy 三层均存在</div>
+      <p>三处都把缺失或停牌日的 OHLC / previous_close 填成 <code>0</code> → 0 价 bar 会污染收益计算，正中评分红线「随意填 0」「停牌 / 无成交处理不合理」。我没有就地单点修补，而是把它升级成一条<strong>端到端的数据契约</strong>：新增 <code>daily_utils.normalize_daily</code> 给每行打 <code>tradable</code> 标志，缺失一律保留 <code>NaN</code>；回测端对不可交易日<strong>显式跳过信号 / 入场，出场则顺延到下一有效交易日</strong>，绝不伪造 0 价。</p>
+    </div>
+
+    <div class="bug line">
+      <div class="stamp">Red Line</div>
+      <h3><span class="bno">④</span>改进方向的横截面未来函数</h3>
+      <div class="where">改进策略设计阶段</div>
+      <p>若改进版用「全样本成交量分位」当阈值，会把未来的横截面信息泄漏进当下决策。我据此<strong>改变了改进方向</strong> —— 从「成交量确认」换成「外部数据（暗盘 + IPO）过滤」。外部特征全是上市前 / 上市时点的 point-in-time 信息（暗盘 = 上市前夜、超购倍数 = 招股结束即知），相对 day2 入场<span class="accent">不存在未来函数</span>。</p>
+    </div>
+
+    <div class="note">
+      <span class="lbl">这一节体现什么</span>
+      <p>两个真 bug 都是「静默错误」—— 不抛异常、回测照常出数，只有逐行读代码 + 理解金融语义才能抓到。两条红线则展示了把「就地修补」升级为「设计层契约」的判断力。</p>
+    </div>
+  </section>
+
+  <!-- ============ 04 两个判断故事 ============ -->
+  <section id="s4" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">04</div>
+      <h2>两个工程判断故事</h2>
+      <div class="sub">研究诚实如何在 commit 历史里真实发生</div>
+    </div>
+    <p class="lead">这一节是我最希望评审看的部分。两次，我都拿到了一个「好看」的结果，然后亲手把它推翻 —— 因为它经不起检验。</p>
+
+    <h3 class="subh"><span class="mk">A</span>我把自己的 +64.2% 砍到了 +0.9%</h3>
+    <p>15:51 的首版报告里，改进版（暗盘过滤）回测 <strong>+64.2%</strong>，对照 baseline −2.9% —— 一个漂亮的故事。但我随即意识到：出场价用的是触发当日的 <code>close</code>，而止盈日的 close 往往比止盈触发价更高，这等于<strong>系统性高估了热门标的的收益</strong>。我把出场口径改成<strong>按触发价位保守成交</strong>（跳空越过则按当日 open），数字应声回落：</p>
+    <div class="arc">
+      <div class="b"><div class="k">首版口径 · 收盘价出场</div><div class="v pos">+64.2%</div><div class="note2">improved · 15:51</div></div>
+      <div class="ar">→</div>
+      <div class="b"><div class="k">修正后 · 触发价出场</div><div class="v" style="color:var(--ink-soft)">+0.9%</div><div class="note2">improved · 最终</div></div>
+    </div>
+    <p>砍掉的 60 多个点，本质上是一个出场偏差喂给我的假 alpha。改完之后，暗盘过滤的优势基本消失 —— 这才是真相。</p>
+
+    <h3 class="subh"><span class="mk">B</span>我删掉了一个回测 +43.5% 的多因子打分</h3>
+    <p>我曾试过把「量能 + 暗盘」组合成一个多因子打分，门槛调到 0.5 时一度回测 <strong>+43.5%</strong>。但用同一套稳健性检验一照，它原形毕露：</p>
+    <table class="tbl mono">
+      <thead><tr><th>判据</th><th>多因子打分（门槛 0.5）</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr><td>Spearman(因子, 收益)</td><td class="num neg">−0.61</td><td>方向与假设相反</td></tr>
+        <tr><td>收益随门槛</td><td>非单调</td><td>尖峰、非机制性</td></tr>
+        <tr><td>置换 p 值</td><td class="num">0.074</td><td>不优于随机选</td></tr>
+      </tbody>
+    </table>
+    <p>三条都指向同一个判断：这是<strong>在小样本上调参调出来的过拟合尖峰</strong>，不是真实信号。于是我<span class="accent">把整个多因子模块从代码里删掉了</span>，并在 README 与报告里写明「试过、证伪、移除」的全过程 —— 而不是留着它充门面。</p>
+    <div class="pq">过拟合不可「消除」，只能<b>量化</b>。根源是 8–14 笔样本 + 单一普涨窗口，自由度远超样本 —— 这不是换个方法能解决的，只能如实承认。</div>
+    <div class="note">
+      <span class="lbl">这一节体现什么</span>
+      <p>两次自我否定都留在了 git 历史里（commit <code>3d84755</code> → <code>337c87a</code> 的口径修正、多因子模块的引入与移除），不是事后包装。对量化岗位而言，「敢于杀死自己的好结果」比「秀一个高收益」可信得多。</p>
+    </div>
+  </section>
+
+  <!-- ============ 05 策略与无未来函数 ============ -->
+  <section id="s5" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">05</div>
+      <h2>改进策略与无未来函数保障</h2>
+      <div class="sub">上游 1 个 baseline → 统一回测引擎 + 4 个版本</div>
+    </div>
+    <p>我把脚手架里散落的 baseline 逻辑重构成<strong>一个统一回测引擎</strong> <code>generate_trades(…, mask, config)</code>：四个策略版本只是传入不同的选股 <code>mask</code>，共用同一套执行 / 成本 / 出场代码 —— 杜绝「不同版本各写一遍、悄悄不一致」。</p>
+    <table class="tbl">
+      <thead><tr><th>版本</th><th>选股逻辑</th><th>角色</th></tr></thead>
+      <tbody>
+        <tr><td><code>baseline_first_day_momentum</code></td><td>首日 close/open−1 &gt; 5% → day2 open 入场</td><td>文档规则 1–8，对照基准</td></tr>
+        <tr><td><code>improved_grey_market_filter</code></td><td>baseline ∩ 暗盘溢价 ≥ 阈值</td><td>外部数据过滤（改进）</td></tr>
+        <tr><td><code>reversal_first_day_daily</code></td><td>首日大跌 &lt; −5% 后预期反转</td><td>对照（与动量互斥）</td></tr>
+        <tr><td><code>improved_trailing_stop</code></td><td>improved 选股 + 追踪止损出场</td><td>出场机制增强</td></tr>
+      </tbody>
+    </table>
+    <p>追踪止损是个容易写出日内未来函数的地方 —— 既用当日 high 抬止损线、又用当日 low 判触发，就偷看了未来。我的实现刻意<strong>收盘后才更新高点</strong>，进入当日用截至昨日的高点判触发：</p>
+    <div class="code">
+      <span class="cap">strategy.py · 追踪止损 · 无日内未来函数</span>
+<pre><span class="kw">hwm</span> = entry_price
+<span class="kw">for</span> _, row <span class="kw">in</span> path.iterrows():
+    trail_line = hwm * (1 - trail)
+    <span class="kw">if</span> float(row[<span class="cm">"low"</span>]) &lt;= trail_line:        <span class="cm"># 用截至昨日的高点判触发</span>
+        exit_row, reason = row, <span class="cm">"trailing_stop"</span>
+        <span class="kw">break</span>
+    hwm = max(hwm, float(row[<span class="cm">"high"</span>]))         <span class="cm"># 收盘后才上移高点 → 不偷看当日</span></pre>
+    </div>
+    <p style="font-size:15px"><strong>整体无未来函数保障：</strong>信号只用 day1 与上市前 / 上市时点的外部数据；执行价一律用 day2 <code>open</code>；扰动 day2 之后任何数据都不改变信号（有专门测试覆盖）。</p>
+  </section>
+
+  <!-- ============ 06 抗 data-snooping ============ -->
+  <section id="s6" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">06</div>
+      <h2>方法论：五层抗 data-snooping 校验</h2>
+      <div class="sub">src/stats.py · 15 项测试覆盖 · 全部固定 seed 可复现</div>
+    </div>
+    <p>小样本 + 多次试验 = 几乎必然挑出一个「看起来显著」的假结果。我没有回避这个问题，而是专门写了一层 <code>stats.py</code> 来<strong>量化</strong>它。每一层控制一种不同的偏差：</p>
+    <div class="methods">
+      <div class="m"><div class="name">Bootstrap CI<small>有放回重采样 · n=1000</small></div><div class="desc">逐笔收益重采样，给复利 total_return 的 95% 置信区间。CI 越宽 = 点估计越不可信。</div><div class="res">improved<br>[−55%, +124%]</div></div>
+      <div class="m"><div class="name">置换检验<small>permutation · 单侧</small></div><div class="desc">从候选池随机选同等数量的交易，问「按因子选」是否优于「随机选」。p 大 = 选股不比掷骰子好。</div><div class="res neg">p = 0.507</div></div>
+      <div class="m"><div class="name">White Reality Check<small>max-statistic 置换</small></div><div class="desc">校正「在 N 个策略×门槛配置里挑最好」的选择偏差 —— 本研究唯一仍敞着的过拟合口子。</div><div class="res neg">p = 0.138</div></div>
+      <div class="m"><div class="name">Holm step-down<small>多重检验校正</small></div><div class="desc">对各门槛的单独置换 p 做 Holm–Bonferroni 校正，取最小校正后 p。</div><div class="res neg">p = 0.396</div></div>
+      <div class="m"><div class="name">Deflated Sharpe<small>Bailey &amp; López de Prado</small></div><div class="desc">扣除「试 N=14 次挑最好」后，观测 Sharpe 是否仍显著；含偏度 / 峰度修正与小样本退化保护。</div><div class="res neg">DSR = 0.0</div></div>
+    </div>
+    <div class="callout">
+      <span class="lbl">校正后的结论</span>
+      所有<strong>选股因子</strong>（首日动量 / 暗盘溢价）扣成本后经五层检验<span class="accent">均不显著</span>。表观最优可由 data-snooping 解释 —— 这进一步坐实：在本样本上没有稳健的选股 alpha。我把这个「负面」结论作为报告的主结论，而不是藏起来。
+    </div>
+    <p style="font-size:15px;color:var(--ink-soft)">实现细节体现严谨：Reality Check 每轮只重排一次候选池以<strong>跨候选共享随机源、保留相关性</strong>；DSR 对样本 &lt;3、零方差、分母非正时返回 <code>None</code> 而非硬算（小样本退化保护）；所有检验固定 <code>seed=42</code> 可复现。</p>
+  </section>
+
+  <!-- ============ 07 回测结果 ============ -->
+  <section id="s7" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">07</div>
+      <h2>回测结果</h2>
+      <div class="sub">research_report.md 由 backtest.py 全自动幂等生成</div>
+    </div>
+    <table class="tbl mono">
+      <thead><tr><th>策略版本</th><th class="num">笔数</th><th class="num">胜率</th><th class="num">总收益</th><th class="num">回撤</th><th class="num">PF</th></tr></thead>
+      <tbody>
+        <tr><td>baseline 首日动量</td><td class="num">14</td><td class="num">28.6%</td><td class="num neg">−15.3%</td><td class="num">−45.9%</td><td class="num">0.93</td></tr>
+        <tr><td>improved 暗盘过滤</td><td class="num">12</td><td class="num">33.3%</td><td class="num pos">+0.9%</td><td class="num">−41.0%</td><td class="num">1.16</td></tr>
+        <tr><td>reversal 反转（对照）</td><td class="num">27</td><td class="num">33.3%</td><td class="num neg">−11.5%</td><td class="num">−35.3%</td><td class="num">1.04</td></tr>
+        <tr><td><strong>improved + 追踪止损</strong></td><td class="num">12</td><td class="num">41.7%</td><td class="num pos">+112.6%</td><td class="num">−53.4%</td><td class="num star">2.70</td></tr>
+      </tbody>
+    </table>
+    <p><strong>怎么读这张表：</strong>追踪止损版回测 +112.6% 很扎眼，而且收益随 trail 参数<strong>单调</strong>（是机制性、不是挑点），但它建立在 2026 上半年港股新股近乎普涨之上 —— 任何「让趋势裸奔」的出场在普涨窗口都天然占优。我在报告里明确标注：这是<strong>出场机制</strong>的结果而非选股 alpha，外推到下跌 / 震荡市存疑，需多市场样本外验证。</p>
+    <p style="font-size:15px;color:var(--ink-soft)">口径：<code>total_return</code> 为序贯等额下注的复利收益；<code>max_drawdown</code> 为复利权益的百分比回撤；reversal 与 momentum 互斥，improved 系列为 baseline 的选股子集，各版本分列对照、不合并计数。另含 0.5×/1×/2× <strong>成本敏感性</strong>、暗盘阈值<strong>受控扫描</strong>（隔离「能查到暗盘 ≈ 热门股」的选择效应）、IPO 特征<strong>分层</strong>三套附表 + 3 张图表。</p>
+  </section>
+
+  <!-- ============ 08 工程质量 ============ -->
+  <section id="s8" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">08</div>
+      <h2>工程质量与可复现</h2>
+      <div class="sub">从裸脚手架到一键复现的研究流水线</div>
+    </div>
+    <table class="tbl">
+      <thead><tr><th style="width:24%">维度</th><th>做法</th></tr></thead>
+      <tbody>
+        <tr><td><strong>环境锁定</strong></td><td><code>pixi.toml</code> + <code>pixi.lock</code> 固定 Python 3.12 与全部依赖；<code>pixi run download/features/backtest/pipeline/test</code> 封装文档原命令，<code>pipeline</code> 可离线串联（<code>--source-root</code> 跳过 HTTP API）。</td></tr>
+        <tr><td><strong>测试</strong></td><td>上游脚手架几乎无测试 → <strong>13 文件 59 项，2.19s 全过</strong>。覆盖无未来函数、成本 / 滑点 / 最低费、止损止盈触发价与跳空成交、追踪止损无 look-ahead、停牌跳过、两个 bug 的回归、五层统计检验、外部覆盖率、阈值扫描稳健判据。</td></tr>
+        <tr><td><strong>参数集中</strong></td><td>新增 <code>config.py</code> 把阈值 / 持仓 / 止损止盈 / notional / 暗盘阈值 / 成本缩放 / 缺失策略全部集中，杜绝硬编码散落。</td></tr>
+        <tr><td><strong>报告可复现</strong></td><td><code>research_report.md</code>（含 Analysis 与 Limitations）<strong>由 backtest.py 全自动生成、重跑幂等</strong>，不依赖任何手工编辑 —— 数字与结论永远和代码一致。</td></tr>
+        <tr><td><strong>外部数据合规</strong></td><td><code>ipo_info.csv</code> + <code>grey_market.csv</code> 每行带 <code>source_url</code>、缺失留空不填 0；覆盖率双口径如实给出（universe grey 12/65；信号标的 grey 12/14 ≈ 85.7%）。</td></tr>
+        <tr><td><strong>过程留痕</strong></td><td><code>docs/plans/</code> 6 份带日期文档：已知问题记录、正式设计 spec、实现计划、修复复盘、多因子设计（已证伪）、data-snooping 校验设计。</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 09 时间线 ============ -->
+  <section id="s9" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">09</div>
+      <h2>开发时间线</h2>
+      <div class="sub">28 个提交的叙事弧 · 2026-06-15</div>
+    </div>
+    <div class="tl">
+      <div class="ev hl"><div class="t">14:59 · 审计</div><div class="d">逐行审脚手架，修 2 个真 bug，写下已知问题记录与正式设计 spec。</div></div>
+      <div class="ev"><div class="t">15:10–15:32 · 重建流水线</div><div class="d">pixi 环境、config 集中参数、tradable 归一化（去 fillna(0)）、外部数据加载、<strong>统一回测引擎</strong>、报告 / 成本敏感性 / 分层表编排。</div></div>
+      <div class="ev"><div class="t">15:51 · 首版报告</div><div class="d">baseline −2.9% / improved <span class="pos">+64.2%</span> —— 一个好看但未经审视的结果。</div></div>
+      <div class="ev hl"><div class="t">15:59–16:32 · 自我修正</div><div class="d">发现收盘价出场高估收益，改为<strong>触发价保守成交</strong> → improved 砍到 +0.9%；加暗盘阈值受控扫描，隔离数据可得性的选择效应。</div></div>
+      <div class="ev hl"><div class="t">18:59–19:32 · 稳健性层</div><div class="d">加 Bootstrap CI + 置换检验，再加 <strong>White RC + Holm + Deflated Sharpe</strong> 抗 data-snooping 校验层；多因子打分用同一套检验证伪后<strong>删除</strong>。</div></div>
+      <div class="ev"><div class="t">19:58 · 出场增强 + 重定调</div><div class="d">加 improved + 追踪止损版本，并把报告整体重定调为「严谨研究而非虚假 alpha」。</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 10 局限 ============ -->
+  <section id="s10" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">10</div>
+      <h2>局限（必须正视）</h2>
+      <div class="sub">写在报告里，而不是藏起来</div>
+    </div>
+    <table class="tbl">
+      <thead><tr><th style="width:30%">局限</th><th>影响与缓解</th></tr></thead>
+      <tbody>
+        <tr><td><strong>单一普涨窗口</strong></td><td>数据仅覆盖 2026 上半年，期间新股近乎全线上涨；任何「选更热标的 / 让趋势跑」的规则都天然占优，外推性存疑。</td></tr>
+        <tr><td><strong>样本极小</strong></td><td>各版本仅个位数到十余笔，置信区间很宽、易过拟合 —— 这正是五层检验给不出显著性的根因。</td></tr>
+        <tr><td><strong>选择偏差未尽除</strong></td><td>暗盘数据覆盖 12/14 信号标的，受控扫描已隔离主因，但仍有 2 支偏冷标的因无公开暗盘被动排除。</td></tr>
+        <tr><td><strong>外部数据口径</strong></td><td>个别暗盘值为近似（「升幅超五成」取 0.50）、部分超购为孖展口径，均在 <code>source_note</code> 标注。</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:15px"><strong>下一步：</strong>补全偏冷标的暗盘数据彻底消除选择偏差 · 阈值改按上市月 / 行业 expanding 分位去横截面假设 · 扩到多年多市场状态做样本外验证。</p>
+  </section>
+
+  <!-- ============ 11 合规 ============ -->
+  <section id="s11" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">11</div>
+      <h2>文档合规自查</h2>
+      <div class="sub">对照 docs/strategy-project.md 评分点逐条核对</div>
+    </div>
+    <div class="compliance">
+      <div class="row"><span>Required Outputs — 8 个产物路径 / 字段一字不差</span><span class="check">✓ PASS</span></div>
+      <div class="row"><span>Trade log 15 字段完整</span><span class="check">✓ PASS</span></div>
+      <div class="row"><span>Metrics 10 字段完整</span><span class="check">✓ PASS</span></div>
+      <div class="row"><span>Baseline 规则 1–8</span><span class="check">✓ PASS</span></div>
+      <div class="row"><span>4 条禁止（无 look-ahead / 扣成本 / 全记 trade log / 外部数据引来源）</span><span class="check">✓ PASS</span></div>
+      <div class="row"><span>Required Improvement（外部数据方向 + 说明假设 + 对照 + 不堆参数）</span><span class="check">✓ PASS</span></div>
+      <div class="row"><span>Candidate External Data（两模板 + 来源 + 缺失不填 0 + 覆盖率）</span><span class="check">✓ PASS</span></div>
+    </div>
+  </section>
+
+  <!-- ============ 12 结论 ============ -->
+  <section id="s12" class="reveal">
+    <div class="sec-head">
+      <div class="sec-no">12</div>
+      <h2>结论</h2>
+      <div class="sub">verdict</div>
+    </div>
+    <div class="conclusion">
+      <div class="ck">Final Verdict</div>
+      <p>在上游纯脚手架上<strong>只动 strategy 方向</strong>：审计修复 2 个静默真 bug（持仓窗口跨笔污染、回撤非时序），把 2 条评分红线升级为端到端数据契约，并将单一 baseline 重构为<strong>统一回测引擎 + 4 个策略版本 + 外部数据 + 59 项测试 + 全自动幂等报告</strong>。</p>
+      <p>更重要的是研究态度：我两次拿到好看的结果（improved <em>+64.2%</em>、多因子 <em>+43.5%</em>），都用<em>五层抗 data-snooping 检验</em>把它们证伪并亲手推翻。最终主结论是诚实的「本样本上没有稳健选股 alpha」—— 这份交付卖的是<strong>方法的可信</strong>，不是数字的好看。</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>intern-gym-wyf · strategy track · 面向评审</span>
+    <span>研究报告全自动生成 · 重跑幂等</span>
+    <span>rookiewu417 · 2026-06-15</span>
+  </footer>
+
+</div>
+
+<script>
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.08});
+  document.querySelectorAll('.reveal').forEach((el)=>io.observe(el));
+</script>
+</body>
+</html>

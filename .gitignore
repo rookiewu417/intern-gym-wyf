@@ -13,3 +13,4 @@ strategy-project/data/processed/*
 !strategy-project/data/processed/.gitkeep
 strategy-project/reports/*
 !strategy-project/reports/.gitkeep
+.pixi/

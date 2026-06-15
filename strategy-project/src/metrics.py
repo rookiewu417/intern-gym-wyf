@@ -47,3 +47,12 @@ def calculate_metrics(trades: pd.DataFrame) -> dict[str, float]:
         "turnover": float(trades["entry_price"].mul(trades["shares"]).sum()),
         "average_holding_days": float(holding_days.mean()) if not holding_days.empty else 0.0,
     }
+
+
+def metrics_by_version(trades: pd.DataFrame) -> dict[str, dict[str, float]]:
+    if trades.empty or "strategy_version" not in trades.columns:
+        return {}
+    return {
+        str(version): calculate_metrics(group.reset_index(drop=True))
+        for version, group in trades.groupby("strategy_version", sort=True)
+    }

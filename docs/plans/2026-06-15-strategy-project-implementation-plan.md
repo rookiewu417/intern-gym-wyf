@@ -613,10 +613,11 @@ def build_daily_ipo_features(
     for symbol, group in daily.groupby("symbol", sort=True):
         bars = group.sort_values("trade_date").reset_index(drop=True)
         tradable = bars[bars["tradable"]].reset_index(drop=True)
-        if len(tradable) < 2:
+        if len(tradable) < 1:
             continue
         first = tradable.iloc[0]
-        entry = tradable.iloc[1]
+        has_tradable_day2 = len(tradable) >= 2
+        entry = tradable.iloc[1] if has_tradable_day2 else None
         first_day_return = safe_return(float(first["close"]), float(first["open"]))
         listing_row = universe[universe["symbol"] == symbol].head(1)
         coverage_start = str(first["trade_date"])
@@ -636,9 +637,9 @@ def build_daily_ipo_features(
             "first_day_return_vs_open": first_day_return,
             "first_day_volume": int(first["volume"]),
             "first_day_turnover": float(first["turnover"]),
-            "entry_date": str(entry["trade_date"]),
-            "entry_open": float(entry["open"]),
-            "baseline_signal": bool(first_day_return > threshold and float(entry["open"]) > 0),
+            "entry_date": str(entry["trade_date"]) if entry is not None else "",
+            "entry_open": float(entry["open"]) if entry is not None else float("nan"),
+            "baseline_signal": bool(has_tradable_day2 and first_day_return > threshold and float(entry["open"]) > 0),
         })
 
     features = pd.DataFrame(rows)

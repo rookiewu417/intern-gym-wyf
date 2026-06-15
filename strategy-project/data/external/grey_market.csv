@@ -1,0 +1,10 @@
+symbol,grey_market_date,grey_close,grey_change_pct,premium_to_ipo_price,source_url,source_note,collected_at
+00100.HK,20260107,,0.26,0.26,https://finance.sina.com.cn/jjxw/2026-01-09/doc-inhfssrv0586451.shtml,暗盘涨25%-27%取中值0.26;grey_close未单列,2026-06-15
+02513.HK,20260107,123.2,0.0602,0.0602,https://www.21jingji.com/article/20260108/herald/559ffa0363fce26d07d99344f061b21b.html,富途暗盘收涨6.02%报123.2,2026-06-15
+02706.HK,20260212,83.9,2.10,2.10,https://cj.sina.com.cn/articles/view/6583770931/1886c5f3300101kw46,暗盘大涨210%,2026-06-15
+02723.HK,20260526,148,1.6667,1.6667,https://news.fx168news.com/cooperate/2605/7453438.shtml,暗盘报148较发行价+166.67%(另报约+172%),2026-06-15
+06636.HK,20260327,60,0.50,0.50,https://www.finet.com.cn/news/69bcb0a4230829f6ba599705.html,暗盘升幅超五成近似取0.50,2026-06-15
+06938.HK,20260108,76.5,0.3196,0.3196,https://www.stcn.com/article/detail/3580280.html,暗盘+31.96%,2026-06-15
+07630.HK,20260512,32.2,0.60,0.602,https://finance.sina.com.cn/stock/estate/integration/2026-05-12/doc-inhxrwqh9901304.shtml,暗盘收涨超60%收报32.16-32.3,2026-06-15
+01021.HK,20260327,,,,https://finance.sina.com.cn/cj/2026-03-29/doc-inhsrzha3593165.shtml,暗盘上涨但具体涨幅未披露(留空不填0),2026-06-15
+01236.HK,20260508,,,,https://caifuhao.eastmoney.com/news/20260430113226884589200,5月8日开启暗盘但涨幅未明确披露(留空),2026-06-15

@@ -31,6 +31,23 @@ def cost_sensitivity(features, daily, cost_model, config=DEFAULT) -> dict[float,
     return out
 
 
+def external_coverage_from_features(features: pd.DataFrame) -> dict[str, float]:
+    total = int(len(features))
+
+    def present(col: str) -> int:
+        return int(features[col].notna().sum()) if col in features.columns else 0
+
+    grey = present("grey_change_pct")
+    ipo = present("public_subscription_multiple")
+    return {
+        "external_symbols_total": total,
+        "external_grey_change_pct_present": grey,
+        "external_grey_coverage_ratio": round(grey / total, 4) if total else 0.0,
+        "external_ipo_subscription_present": ipo,
+        "external_ipo_coverage_ratio": round(ipo / total, 4) if total else 0.0,
+    }
+
+
 def main() -> int:
     features = pd.read_parquet(PROCESSED_DIR / "features.parquet")
     daily = pd.read_parquet(RAW_DIR / "daily_bars.parquet")
@@ -39,6 +56,9 @@ def main() -> int:
     cov_path = RAW_DIR / "coverage_summary.json"
     if cov_path.exists():
         coverage = json.loads(cov_path.read_text(encoding="utf-8"))
+
+    ext_cov = external_coverage_from_features(features)
+    coverage.update(ext_cov)
 
     trades = run_all_versions(features, daily, cost_model)
     by_version = metrics_by_version(trades)
@@ -57,6 +77,7 @@ def main() -> int:
         "overall": overall,
         "by_version": by_version,
         "cost_sensitivity": {str(k): v for k, v in sensitivity.items()},
+        "external_coverage": ext_cov,
     }
     (REPORTS_DIR / "metrics.json").write_text(json.dumps(metrics_payload, ensure_ascii=False, indent=2), encoding="utf-8")
     write_report_template(overall, REPORTS_DIR / "research_report.md",

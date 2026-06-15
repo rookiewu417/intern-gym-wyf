@@ -32,4 +32,7 @@ def test_run_backtest_writes_outputs(tmp_path, monkeypatch):
     assert set(trades["strategy_version"]) <= {"baseline_first_day_momentum_daily", "improved_grey_market_filter"}
     metrics = json.loads((reports / "metrics.json").read_text())
     assert "by_version" in metrics and "overall" in metrics and "cost_sensitivity" in metrics
+    assert "external_coverage" in metrics
+    assert metrics["external_coverage"]["external_grey_coverage_ratio"] == 1.0
+    assert metrics["external_coverage"]["external_ipo_coverage_ratio"] == 1.0
     assert (reports / "research_report.md").exists()

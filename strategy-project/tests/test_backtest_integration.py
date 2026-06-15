@@ -35,7 +35,7 @@ def test_run_backtest_writes_outputs(tmp_path, monkeypatch):
     backtest.main()
 
     ALL_VERSIONS = {"baseline_first_day_momentum_daily", "improved_grey_market_filter",
-                    "reversal_first_day_daily"}
+                    "reversal_first_day_daily", "improved_trailing_stop"}
     trades = pd.read_csv(reports / "trades.csv")
     assert set(trades["strategy_version"]) <= ALL_VERSIONS
     assert "reversal_first_day_daily" in set(trades["strategy_version"])  # reversal 对照已纳入
@@ -45,6 +45,8 @@ def test_run_backtest_writes_outputs(tmp_path, monkeypatch):
     assert "by_version" in metrics and "cost_sensitivity" in metrics
     assert "overall" not in metrics  # 去掉对 baseline 与其子集 improved 的重复计数 union
     assert "reversal_first_day_daily" in metrics["by_version"]
+    assert "improved_trailing_stop" in metrics["by_version"]  # 追踪止损增强版进对照
+    assert "trailing_stop_sweep" in metrics  # trail% 扫描（呈现单调性、非尖峰）
     assert "total_return_ci" in metrics and "improved_grey_market_filter" in metrics["total_return_ci"]
     assert len(metrics["total_return_ci"]["improved_grey_market_filter"]) == 2  # (lo, hi)
     assert "selection_pvalue" in metrics and "improved_grey_market_filter" in metrics["selection_pvalue"]

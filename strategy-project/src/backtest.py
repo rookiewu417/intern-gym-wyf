@@ -7,7 +7,7 @@ from dataclasses import replace
 
 import pandas as pd
 
-from config import COST_SENSITIVITY_SCALES, DEFAULT, GREY_THRESHOLD_SWEEP
+from config import COST_SENSITIVITY_SCALES, DEFAULT, GREY_THRESHOLD_SWEEP, TRAILING_SWEEP
 from costs import load_cost_model, scale_cost_model
 from metrics import calculate_metrics, metrics_by_version
 from paths import PROCESSED_DIR, RAW_DIR, REPORTS_DIR
@@ -23,9 +23,11 @@ from stats import (
 from strategy import baseline_mask, generate_trades, improved_mask, reversal_mask
 
 VERSIONS = (
-    ("baseline_first_day_momentum_daily", baseline_mask),
-    ("improved_grey_market_filter", improved_mask),
-    ("reversal_first_day_daily", reversal_mask),
+    ("baseline_first_day_momentum_daily", baseline_mask, {}),
+    ("improved_grey_market_filter", improved_mask, {}),
+    ("reversal_first_day_daily", reversal_mask, {}),
+    # 增强版：improved 选股 + 追踪止损出场（让赢家跑），最大持仓放宽到 10 日
+    ("improved_trailing_stop", improved_mask, {"trailing_stop_pct": 0.10, "holding_days": 10}),
 )
 
 
@@ -41,7 +43,7 @@ def _json_safe(obj):
 
 
 def run_all_versions(features, daily, cost_model, config=DEFAULT) -> pd.DataFrame:
-    frames = [generate_trades(features, daily, cost_model, version=v, mask=m, config=config) for v, m in VERSIONS]
+    frames = [generate_trades(features, daily, cost_model, version=v, mask=m, config=replace(config, **ov)) for v, m, ov in VERSIONS]
     frames = [f for f in frames if not f.empty]
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
@@ -49,11 +51,12 @@ def run_all_versions(features, daily, cost_model, config=DEFAULT) -> pd.DataFram
 def cost_sensitivity(features, daily, cost_model, config=DEFAULT) -> dict[str, dict[float, dict[str, float]]]:
     """按版本做成本敏感性，避免把 baseline 与其子集 improved 合并造成重复计数。"""
     out: dict[str, dict[float, dict[str, float]]] = {}
-    for version, mask in VERSIONS:
+    for version, mask, ov in VERSIONS:
+        cfg_v = replace(config, **ov)
         out[version] = {
             scale: calculate_metrics(
                 generate_trades(features, daily, scale_cost_model(cost_model, scale),
-                                version=version, mask=mask, config=config)
+                                version=version, mask=mask, config=cfg_v)
             )
             for scale in COST_SENSITIVITY_SCALES
         }
@@ -71,6 +74,16 @@ def grey_threshold_sweep(features, daily, cost_model, config=DEFAULT) -> dict[fl
         cfg = replace(config, grey_premium_min=threshold)
         trades = generate_trades(features, daily, cost_model, version="improved_grey_market_filter", mask=improved_mask, config=cfg)
         out[threshold] = calculate_metrics(trades)
+    return out
+
+
+def trailing_stop_sweep(features, daily, cost_model, config=DEFAULT) -> dict[float, dict[str, float]]:
+    """追踪止损 trail% 扫描（improved 信号 + trailing 出场）：呈现收益随 trail 的单调性，不挑最优。"""
+    out = {}
+    for trail in TRAILING_SWEEP:
+        cfg = replace(config, trailing_stop_pct=trail, holding_days=10)
+        trades = generate_trades(features, daily, cost_model, version="improved_trailing_stop", mask=improved_mask, config=cfg)
+        out[trail] = calculate_metrics(trades)
     return out
 
 
@@ -145,7 +158,7 @@ def data_snooping_diagnostics(features, daily, cost_model, base_returns, config=
     holm = holm_correction(per_p)
     sharpes = [s for *_, s in cands if s == s]  # 去 NaN
     sharpe_var = statistics.variance(sharpes) if len(sharpes) >= 2 else 0.0
-    n_trials = len(VERSIONS) + len(GREY_THRESHOLD_SWEEP)  # 保守下界：不含历史已移除的 multifactor
+    n_trials = len(VERSIONS) + len(GREY_THRESHOLD_SWEEP) + len(TRAILING_SWEEP)  # 保守下界：不含历史已移除的 multifactor
     imp = next((rets for lab, _, _, rets, _ in cands if lab == "grey>=0"), [])
     dsr = deflated_sharpe_ratio(imp, n_trials, sharpe_var) if imp else None
     return {
@@ -175,6 +188,7 @@ def main() -> int:
     by_version = metrics_by_version(trades)
     sensitivity = cost_sensitivity(features, daily, cost_model)
     sweep = grey_threshold_sweep(features, daily, cost_model)
+    trailing_sweep = trailing_stop_sweep(features, daily, cost_model)
 
     trades_grey = grey_universe_trades(features, daily, cost_model)
     grey_strat, grey_corr = grey_return_analysis(features, trades_grey)
@@ -206,6 +220,7 @@ def main() -> int:
         "by_version": by_version,
         "cost_sensitivity": {ver: {str(k): v for k, v in scales.items()} for ver, scales in sensitivity.items()},
         "grey_threshold_sweep": {str(k): v for k, v in sweep.items()},
+        "trailing_stop_sweep": {str(k): v for k, v in trailing_sweep.items()},
         "grey_return_spearman": grey_corr,
         "total_return_ci": total_return_ci,
         "selection_pvalue": selection_pvalue,
@@ -219,7 +234,7 @@ def main() -> int:
         REPORTS_DIR / "research_report.md",
         by_version=by_version, sensitivity=sensitivity, coverage=coverage, cost_model=cost_model,
         sub_stratification=sub_strat, grey_stratification=grey_strat, grey_corr=grey_corr,
-        grey_sweep=sweep,
+        grey_sweep=sweep, trailing_sweep=trailing_sweep,
         total_return_ci=total_return_ci, selection_pvalue=selection_pvalue, data_snooping=data_snooping, charts=charts,
     )
     print(json.dumps(_json_safe(metrics_payload), ensure_ascii=False, indent=2))

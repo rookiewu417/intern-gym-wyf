@@ -65,17 +65,29 @@ def generate_trades(
         exit_row = path.iloc[-1]
         exit_reason = "holding_period"
         exit_raw = float(exit_row["close"])  # 未触发则末个有效交易日 close 出场
-        stop_level = entry_price * (1 - config.stop_loss_pct)
-        take_level = entry_price * (1 + config.take_profit_pct)
-        for _, row in path.iterrows():
-            # 触发即在触发价位成交；若当日跳空已越过触发价，则按 open 成交（真实可得价）
-            day_open = float(row["open"])
-            if float(row["low"]) <= stop_level:
-                exit_row, exit_reason, exit_raw = row, "stop_loss", min(stop_level, day_open)
-                break
-            if float(row["high"]) >= take_level:
-                exit_row, exit_reason, exit_raw = row, "take_profit", max(take_level, day_open)
-                break
+        if config.trailing_stop_pct is not None:
+            # 追踪止损：止损线=移动高点*(1-trail)、只上移；进入当日用截至昨日的高点判触发，
+            # 收盘后才更新高点 → 不会用当日 high 抬线又用当日 low 判触发（无日内未来函数）
+            trail = config.trailing_stop_pct
+            hwm = entry_price
+            for _, row in path.iterrows():
+                trail_line = hwm * (1 - trail)
+                if float(row["low"]) <= trail_line:
+                    exit_row, exit_reason, exit_raw = row, "trailing_stop", min(trail_line, float(row["open"]))
+                    break
+                hwm = max(hwm, float(row["high"]))
+        else:
+            stop_level = entry_price * (1 - config.stop_loss_pct)
+            take_level = entry_price * (1 + config.take_profit_pct)
+            for _, row in path.iterrows():
+                # 触发即在触发价位成交；若当日跳空已越过触发价，则按 open 成交（真实可得价）
+                day_open = float(row["open"])
+                if float(row["low"]) <= stop_level:
+                    exit_row, exit_reason, exit_raw = row, "stop_loss", min(stop_level, day_open)
+                    break
+                if float(row["high"]) >= take_level:
+                    exit_row, exit_reason, exit_raw = row, "take_profit", max(take_level, day_open)
+                    break
         held_days = int(path[path["trade_date"] <= str(exit_row["trade_date"])].shape[0])
 
         exit_price = apply_slippage(exit_raw, "sell", cost_model)

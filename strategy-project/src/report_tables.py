@@ -127,6 +127,15 @@ def _analysis(by_version: dict, grey_sweep: dict, grey_corr: float) -> str:
             f"- **Reversal（首日大跌后反转，对照）**：{rev.get('trade_count',0)} 笔，胜率 {rev.get('win_rate',0):.1%}，"
             f"总收益 {rev.get('total_return',0):.2%}，profit_factor {rev_pf_str}。"
         )
+    it = by_version.get("improved_trailing_stop", {})
+    if it:
+        it_pf = float(it.get("profit_factor", 0.0))
+        it_pf_str = "∞" if math.isinf(it_pf) else f"{it_pf:.2f}"
+        lines.append(
+            f"- **Improved+Trailing（增强，追踪止损让赢家跑）**：{it.get('trade_count',0)} 笔，胜率 {it.get('win_rate',0):.1%}，"
+            f"总收益 {it.get('total_return',0):.2%}，profit_factor {it_pf_str}；收益随 trail **单调**（机制性、非尖峰），"
+            f"是出场机制改进而非选股因子；但靠单一普涨窗口『让趋势跑』天然占优，外推到下跌/震荡市存疑。"
+        )
     # 受控实验：阈值扫描趋势（仅作用于暗盘可得域）。稳健判据：单调性 + 全样本秩相关，避免被首尾两点误导
     if grey_sweep:
         ts = sorted(grey_sweep.keys())
@@ -169,6 +178,7 @@ def write_report_template(
     grey_stratification: pd.DataFrame | None = None,
     grey_corr: float = float("nan"),
     grey_sweep: dict[float, dict[str, float]] | None = None,
+    trailing_sweep: dict[float, dict[str, float]] | None = None,
     total_return_ci: dict | None = None,
     selection_pvalue: dict | None = None,
     data_snooping: dict | None = None,
@@ -183,6 +193,7 @@ def write_report_template(
     else:
         sens_md = "(无敏感性数据)"
     sweep_md = grey_sweep_table(grey_sweep) if grey_sweep else "(无阈值扫描数据)"
+    trailing_md = grey_sweep_table(trailing_sweep, label="trailing_stop_pct") if trailing_sweep else "(无 trailing 扫描数据)"
     robust_md = robustness_table(by_version, total_return_ci or {}, selection_pvalue or {}) if by_version else "(无诊断数据)"
     ds_md = data_snooping_section(data_snooping or {})
     cov_md = "\n".join(f"- {k}: {v}" for k, v in (coverage or {}).items()) or "(无 coverage)"
@@ -202,9 +213,9 @@ def write_report_template(
 
 ## Executive Summary
 
-> **交付物定调**：本研究的核心交付是对「首日动量 / 暗盘溢价」扣成本后**可交易性的严谨证伪**，而非虚假 alpha——三个版本扣成本后均无稳健正收益；受控阈值扫描 + Bootstrap CI + 置换检验共同表明，naive 对照的表面优势来自「能查到暗盘≈热门股」的选择效应与少数极热标的，而非暗盘溢价本身的稳健区分力（详见下方稳健性诊断与 Analysis）。
+> **交付物定调**：核心是「严谨研究」而非虚假 alpha，区分两件事。**选股因子**（首日动量 / 暗盘溢价）扣成本后经 Bootstrap CI + 置换 + data-snooping 多重检验校正**均不显著**（reality-check p、Holm、DSR 见下）。**出场机制**上，追踪止损（improved+trailing）在本样本回测大幅为正、且收益随 trail **单调**（机制性、非挑点），但这建立在 2026 上半年新股普涨、"让趋势跑"天然占优之上，**外推到下跌/震荡市存疑**，仍需多市场样本外验证。
 
-> 口径：`total_return` 为序贯等额下注的**复利**总收益；`max_drawdown` 为复利权益的**百分比**回撤（两者同源）。reversal 与 momentum 信号互斥、improved 为 baseline 的子集（叠加暗盘过滤），三者分列对照、不合并计数。`profit_factor=∞` 表示无亏损交易（`metrics.json` 中记为 `null`）。
+> 口径：`total_return` 为序贯等额下注的**复利**总收益；`max_drawdown` 为复利权益的**百分比**回撤（两者同源）。reversal 与 momentum 信号互斥、improved 及 improved+trailing 均为 baseline 的选股子集（出场机制不同），各版本分列对照、不合并计数。`profit_factor=∞` 表示无亏损交易（`metrics.json` 中记为 `null`）。
 
 {compare_md}
 
@@ -219,6 +230,7 @@ API 下载覆盖、缺失/停牌/无成交，及自行调研的 IPO/暗盘来源
 - Baseline：首日动量（day1 close/open-1 > 阈值，day2 open 入场，持 K 日，止损/止盈，扣费），每股票最多一笔。
 - Improved：在 baseline 上叠加暗盘溢价主过滤（grey_change_pct >= 阈值），缺暗盘数据者不入场。
 - Reversal（对照）：首日大跌（close/open-1 < -阈值）后预期反转，day2 open 做多，其余执行与 baseline 相同；与 momentum 互斥。
+- Improved+Trailing（增强）：improved 选股不变，出场改用追踪止损（自移动高点回撤 10% 才出、让趋势跑，不固定 20% 封顶），最大持仓放宽到 10 日。
 - 无未来函数：信号仅用 day1 与上市前/上市时点的外部数据（暗盘=上市前夜、超购=招股结束）；执行价用 day2 open。
 - {cost_line}
 - 出场约定：持仓窗口内逐日先判止损后判止盈（同日同时触及按止损计），含入场当日；触发即按 `stop_level`/`take_level` 价位成交（保守惯例，再叠加卖出滑点），未触发则在末个有效交易日 close 出场。
@@ -241,6 +253,12 @@ API 下载覆盖、缺失/停牌/无成交，及自行调研的 IPO/暗盘来源
 {sweep_md}
 
 {_img(charts, "grey_threshold_sweep", "grey threshold sweep")}
+
+### 增强版：追踪止损 trail% 扫描（improved 信号 + trailing 出场）
+
+> 收益随 trail **单调**（非尖峰）= 机制性而非挑点，比固定止盈调参可辩护；但单一普涨窗口下"让趋势裸奔"天然占优，外推到下跌/震荡市存疑（详见 Limitations）。
+
+{trailing_md}
 
 ### 稳健性诊断（Bootstrap 95% CI + 置换检验）
 

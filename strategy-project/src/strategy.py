@@ -52,7 +52,7 @@ def generate_baseline_trades(
                 exit_row = row
                 exit_reason = "take_profit"
                 break
-        holding_days = int(path[path["trade_date"] <= str(exit_row["trade_date"])].shape[0])
+        held_days = int(path[path["trade_date"] <= str(exit_row["trade_date"])].shape[0])
 
         exit_raw = float(exit_row["close"])
         exit_price = apply_slippage(exit_raw, "sell", cost_model)
@@ -80,7 +80,7 @@ def generate_baseline_trades(
                 "net_pnl": net_pnl,
                 "return": net_pnl / buy_notional if buy_notional else 0.0,
                 "exit_reason": exit_reason,
-                "holding_days": holding_days,
+                "holding_days": held_days,
                 "strategy_version": "baseline_first_day_momentum_daily",
             }
         )

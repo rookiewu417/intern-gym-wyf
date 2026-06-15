@@ -18,8 +18,9 @@ def calculate_metrics(trades: pd.DataFrame) -> dict[str, float]:
             "average_holding_days": 0.0,
         }
 
-    returns = trades["return"].astype(float)
-    pnl = trades["net_pnl"].astype(float)
+    ordered = trades.sort_values("exit_date") if "exit_date" in trades.columns else trades
+    returns = ordered["return"].astype(float)
+    pnl = ordered["net_pnl"].astype(float)
     wins = returns[returns > 0]
     losses = returns[returns < 0]
     equity = pnl.cumsum()

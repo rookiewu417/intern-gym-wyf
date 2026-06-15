@@ -35,4 +35,7 @@ def test_run_backtest_writes_outputs(tmp_path, monkeypatch):
     assert "external_coverage" in metrics
     assert metrics["external_coverage"]["external_grey_coverage_ratio"] == 1.0
     assert metrics["external_coverage"]["external_ipo_coverage_ratio"] == 1.0
+    assert "grey_threshold_sweep" in metrics
     assert (reports / "research_report.md").exists()
+    assert (reports / "equity_curve.png").exists()
+    assert (reports / "grey_threshold_sweep.png").exists()

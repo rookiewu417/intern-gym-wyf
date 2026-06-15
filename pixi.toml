@@ -9,6 +9,7 @@ pandas = ">=2.2"
 pyarrow = ">=15"
 pytest = ">=8"
 tabulate = ">=0.9"
+matplotlib = ">=3.8"
 
 [tasks]
 serve-research = { cmd = "python -m market_research_api.server --host 127.0.0.1 --port 9041", env = { PYTHONPATH = "mock-research-api/src", RESEARCH_DATA_ROOT = "research-data" } }

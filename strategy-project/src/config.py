@@ -17,3 +17,5 @@ class StrategyConfig:
 
 DEFAULT = StrategyConfig()
 COST_SENSITIVITY_SCALES = (0.5, 1.0, 2.0)
+# 暗盘溢价阈值扫描（仅作用于"有暗盘数据"的标的，是隔离信号区分力的受控实验）
+GREY_THRESHOLD_SWEEP = (0.0, 0.1, 0.2, 0.3, 0.5, 1.0)

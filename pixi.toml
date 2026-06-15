@@ -12,8 +12,8 @@ tabulate = ">=0.9"
 
 [tasks]
 serve-research = { cmd = "python -m market_research_api.server --host 127.0.0.1 --port 9041", env = { PYTHONPATH = "mock-research-api/src", RESEARCH_DATA_ROOT = "research-data" } }
-download = { cmd = "python src/download_data.py --base-url http://127.0.0.1:9041 --start 2026-01-01", cwd = "strategy-project" }
+download = { cmd = "python src/download_data.py --base-url http://127.0.0.1:9041 --start 2026-01-01", cwd = "strategy-project", env = { NO_PROXY = "127.0.0.1,localhost", no_proxy = "127.0.0.1,localhost" } }
 features = { cmd = "python src/build_features.py", cwd = "strategy-project" }
 backtest = { cmd = "python src/backtest.py", cwd = "strategy-project" }
 pipeline = { cmd = "python src/download_data.py --source-root ../research-data && python src/build_features.py && python src/backtest.py", cwd = "strategy-project" }
-test = { cmd = "pytest -q", env = { XTMOCK_SILVER_ROOT = "sample-data", RESEARCH_DATA_ROOT = "research-data" } }
+test = { cmd = "pytest strategy-project/tests mock-research-api/tests -q", env = { RESEARCH_DATA_ROOT = "research-data", NO_PROXY = "127.0.0.1,localhost", no_proxy = "127.0.0.1,localhost" } }

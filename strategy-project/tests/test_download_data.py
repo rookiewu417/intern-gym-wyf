@@ -1,5 +1,13 @@
 import pandas as pd
-from download_data import coverage_summary
+from download_data import coverage_summary, normalize_universe
+
+
+def test_normalize_universe_keeps_daily_rows():
+    uni = pd.DataFrame({"symbol": ["1.hk"], "name": ["a"], "coverage_start": ["20260102"],
+                        "coverage_end": ["20260110"], "daily_rows": [42]})
+    out = normalize_universe(uni)
+    assert "daily_rows" in out.columns
+    assert int(out.iloc[0]["daily_rows"]) == 42
 
 def test_coverage_summary_reports_suspend_and_missing():
     universe = pd.DataFrame({"symbol": ["1.HK", "2.HK"], "name": ["a", "b"],

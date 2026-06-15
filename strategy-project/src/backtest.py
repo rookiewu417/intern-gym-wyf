@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import replace
 
 import pandas as pd
@@ -11,12 +12,25 @@ from metrics import calculate_metrics, metrics_by_version
 from paths import PROCESSED_DIR, RAW_DIR, REPORTS_DIR
 from plots import write_plots
 from report_tables import stratify_by_quantile, write_report_template
-from strategy import baseline_mask, generate_trades, improved_mask
+from stats import bootstrap_total_return_ci, permutation_selection_pvalue
+from strategy import baseline_mask, generate_trades, improved_mask, reversal_mask
 
 VERSIONS = (
     ("baseline_first_day_momentum_daily", baseline_mask),
     ("improved_grey_market_filter", improved_mask),
+    ("reversal_first_day_daily", reversal_mask),
 )
+
+
+def _json_safe(obj):
+    """把 inf/nan 转 null，保证 metrics.json 是标准 JSON（jq / JS 可解析）。"""
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_json_safe(v) for v in obj]
+    return obj
 
 
 def run_all_versions(features, daily, cost_model, config=DEFAULT) -> pd.DataFrame:
@@ -25,11 +39,17 @@ def run_all_versions(features, daily, cost_model, config=DEFAULT) -> pd.DataFram
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
 
 
-def cost_sensitivity(features, daily, cost_model, config=DEFAULT) -> dict[float, dict[str, float]]:
-    out = {}
-    for scale in COST_SENSITIVITY_SCALES:
-        trades = run_all_versions(features, daily, scale_cost_model(cost_model, scale), config)
-        out[scale] = calculate_metrics(trades)
+def cost_sensitivity(features, daily, cost_model, config=DEFAULT) -> dict[str, dict[float, dict[str, float]]]:
+    """按版本做成本敏感性，避免把 baseline 与其子集 improved 合并造成重复计数。"""
+    out: dict[str, dict[float, dict[str, float]]] = {}
+    for version, mask in VERSIONS:
+        out[version] = {
+            scale: calculate_metrics(
+                generate_trades(features, daily, scale_cost_model(cost_model, scale),
+                                version=version, mask=mask, config=config)
+            )
+            for scale in COST_SENSITIVITY_SCALES
+        }
     return out
 
 
@@ -74,12 +94,19 @@ def external_coverage_from_features(features: pd.DataFrame) -> dict[str, float]:
 
     grey = present("grey_change_pct")
     ipo = present("public_subscription_multiple")
+    # 信号标的口径：grey filter 只作用于 momentum 信号，故另报"信号标的覆盖率"，比 universe 分母更贴近策略
+    sig = features[features["baseline_signal"].astype(bool)] if "baseline_signal" in features.columns else features.iloc[0:0]
+    sig_total = int(len(sig))
+    sig_grey = int(sig["grey_change_pct"].notna().sum()) if "grey_change_pct" in sig.columns and sig_total else 0
     return {
         "external_symbols_total": total,
         "external_grey_change_pct_present": grey,
         "external_grey_coverage_ratio": round(grey / total, 4) if total else 0.0,
         "external_ipo_subscription_present": ipo,
         "external_ipo_coverage_ratio": round(ipo / total, 4) if total else 0.0,
+        "external_signal_symbols_total": sig_total,
+        "external_grey_present_on_signals": sig_grey,
+        "external_grey_coverage_on_signals": round(sig_grey / sig_total, 4) if sig_total else 0.0,
     }
 
 
@@ -96,37 +123,54 @@ def main() -> int:
 
     trades = run_all_versions(features, daily, cost_model)
     by_version = metrics_by_version(trades)
-    overall = calculate_metrics(trades)
     sensitivity = cost_sensitivity(features, daily, cost_model)
     sweep = grey_threshold_sweep(features, daily, cost_model)
 
     trades_grey = grey_universe_trades(features, daily, cost_model)
     grey_strat, grey_corr = grey_return_analysis(features, trades_grey)
 
+    # IPO 分层基于 baseline 全集（去重），避免 improved 子集重复同一标的
     sub_strat = pd.DataFrame()
-    if not trades.empty and "public_subscription_multiple" in features.columns:
-        merged = trades.merge(features[["symbol", "public_subscription_multiple"]].drop_duplicates("symbol"), on="symbol", how="left")
+    base_trades = trades[trades["strategy_version"] == "baseline_first_day_momentum_daily"] if not trades.empty else trades
+    if not base_trades.empty and "public_subscription_multiple" in features.columns:
+        merged = base_trades.merge(features[["symbol", "public_subscription_multiple"]].drop_duplicates("symbol"), on="symbol", how="left")
         sub_strat = stratify_by_quantile(merged, "public_subscription_multiple", bins=3)
+
+    # 过拟合量化：每版本 total_return 的 bootstrap 95% CI；子集选择策略 vs 随机选股的置换 p
+    base_returns = base_trades["return"].tolist() if not base_trades.empty else []
+    total_return_ci = {
+        v: list(bootstrap_total_return_ci(trades[trades["strategy_version"] == v]["return"]))
+        for v in by_version
+    }
+    selection_pvalue = {
+        v: permutation_selection_pvalue(base_returns, int(by_version[v]["trade_count"]), float(by_version[v]["total_return"]))
+        for v in ("improved_grey_market_filter",)
+        if v in by_version and base_returns
+    }
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     charts = write_plots(REPORTS_DIR, trades=trades, trades_grey=trades_grey, features=features, sweep=sweep)
     trades.to_csv(REPORTS_DIR / "trades.csv", index=False)
     metrics_payload = {
-        "overall": overall,
         "by_version": by_version,
-        "cost_sensitivity": {str(k): v for k, v in sensitivity.items()},
+        "cost_sensitivity": {ver: {str(k): v for k, v in scales.items()} for ver, scales in sensitivity.items()},
         "grey_threshold_sweep": {str(k): v for k, v in sweep.items()},
         "grey_return_spearman": grey_corr,
+        "total_return_ci": total_return_ci,
+        "selection_pvalue": selection_pvalue,
         "external_coverage": ext_cov,
     }
-    (REPORTS_DIR / "metrics.json").write_text(json.dumps(metrics_payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    write_report_template(
-        overall, REPORTS_DIR / "research_report.md",
-        by_version=by_version, sensitivity=sensitivity, coverage=coverage,
-        sub_stratification=sub_strat, grey_stratification=grey_strat, grey_corr=grey_corr,
-        grey_sweep=sweep, charts=charts,
+    (REPORTS_DIR / "metrics.json").write_text(
+        json.dumps(_json_safe(metrics_payload), ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
     )
-    print(json.dumps(metrics_payload, ensure_ascii=False, indent=2))
+    write_report_template(
+        REPORTS_DIR / "research_report.md",
+        by_version=by_version, sensitivity=sensitivity, coverage=coverage, cost_model=cost_model,
+        sub_stratification=sub_strat, grey_stratification=grey_strat, grey_corr=grey_corr,
+        grey_sweep=sweep,
+        total_return_ci=total_return_ci, selection_pvalue=selection_pvalue, charts=charts,
+    )
+    print(json.dumps(_json_safe(metrics_payload), ensure_ascii=False, indent=2))
     return 0
 
 

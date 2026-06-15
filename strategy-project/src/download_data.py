@@ -84,7 +84,10 @@ def normalize_universe(frame: pd.DataFrame) -> pd.DataFrame:
         result[column] = result[column].map(normalize_date)
     if "name" not in result.columns:
         result["name"] = ""
-    return result[["symbol", "name", "coverage_start", "coverage_end"]].sort_values(["coverage_start", "symbol"])
+    cols = ["symbol", "name", "coverage_start", "coverage_end"]
+    if "daily_rows" in result.columns:  # API/research-data 字段，保留以便核对覆盖
+        cols.append("daily_rows")
+    return result[cols].sort_values(["coverage_start", "symbol"])
 
 
 def normalize_daily(frame: pd.DataFrame) -> pd.DataFrame:

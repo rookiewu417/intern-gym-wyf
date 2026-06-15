@@ -23,8 +23,10 @@ def calculate_metrics(trades: pd.DataFrame) -> dict[str, float]:
     pnl = ordered["net_pnl"].astype(float)
     wins = returns[returns > 0]
     losses = returns[returns < 0]
-    equity = pnl.cumsum()
-    drawdown = equity - equity.cummax()
+    # 序贯等额下注的复利权益曲线（起点 1.0），total_return / max_drawdown 同源、皆为百分比
+    equity = (1.0 + returns).cumprod()
+    peak = equity.cummax().clip(lower=1.0)  # 峰值含初始资金 1.0，否则首笔即亏会漏算从起点跌下的回撤
+    drawdown = (equity - peak) / peak
     gross_profit = pnl[pnl > 0].sum()
     gross_loss = abs(pnl[pnl < 0].sum())
     if "holding_days" in trades.columns:
@@ -41,8 +43,11 @@ def calculate_metrics(trades: pd.DataFrame) -> dict[str, float]:
         "average_return": float(returns.mean()),
         "average_win": float(wins.mean()) if not wins.empty else 0.0,
         "average_loss": float(losses.mean()) if not losses.empty else 0.0,
-        "profit_factor": float(gross_profit / gross_loss) if gross_loss else 0.0,
-        "total_return": float(returns.sum()),
+        "profit_factor": (
+            float(gross_profit / gross_loss) if gross_loss
+            else (float("inf") if gross_profit > 0 else 0.0)
+        ),
+        "total_return": float(equity.iloc[-1] - 1.0) if not equity.empty else 0.0,
         "max_drawdown": float(drawdown.min()) if not drawdown.empty else 0.0,
         "turnover": float(trades["entry_price"].mul(trades["shares"]).sum()),
         "average_holding_days": float(holding_days.mean()) if not holding_days.empty else 0.0,

@@ -66,6 +66,12 @@ def build_daily_ipo_features(
                 and first_day_return > threshold
                 and float(entry["open"]) > 0
             ),
+            # reversal 对照：首日大跌（< -threshold）后预期反转，day2 open 做多
+            "reversal_signal": bool(
+                has_tradable_day2
+                and first_day_return < -threshold
+                and float(entry["open"]) > 0
+            ),
         })
 
     features = pd.DataFrame(rows)

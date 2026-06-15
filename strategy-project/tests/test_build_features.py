@@ -25,6 +25,18 @@ def test_baseline_signal_requires_tradable_day2():
     assert bool(feats.loc["1.HK", "baseline_signal"]) is True
     assert bool(feats.loc["2.HK", "baseline_signal"]) is False  # day2 停牌
 
+def test_reversal_signal_on_first_day_drop():
+    # 3.HK：day1 跌 20%（close/open-1=-0.2），day2 可交易 -> reversal 命中、momentum 不命中
+    daily = pd.DataFrame([
+        {"symbol": "3.HK", "trade_date": "20260102", "open": 10, "high": 10, "low": 7, "close": 8, "volume": 100, "turnover": 1000, "previous_close": 12, "suspend_flag": 0},
+        {"symbol": "3.HK", "trade_date": "20260105", "open": 8, "high": 9, "low": 8, "close": 8.5, "volume": 80, "turnover": 900, "previous_close": 8, "suspend_flag": 0},
+    ])
+    uni = pd.DataFrame({"symbol": ["3.HK"], "name": ["z"], "coverage_start": ["20260102"], "coverage_end": ["20260110"]})
+    feats = build_daily_ipo_features(uni, daily, threshold=0.05).set_index("symbol")
+    assert bool(feats.loc["3.HK", "reversal_signal"]) is True
+    assert bool(feats.loc["3.HK", "baseline_signal"]) is False
+
+
 def test_external_columns_joined():
     ipo, grey = _external()
     feats = build_daily_ipo_features(_universe(), _daily(), threshold=0.05, ipo_info=ipo, grey_market=grey).set_index("symbol")

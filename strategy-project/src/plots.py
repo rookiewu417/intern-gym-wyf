@@ -13,7 +13,8 @@ def _equity(ax, trades: pd.DataFrame, label: str) -> None:
     if trades.empty:
         return
     ordered = trades.sort_values("exit_date")
-    equity = ordered["net_pnl"].astype(float).cumsum()
+    # 与 metrics 同源：序贯等额下注的复利归一化权益（起点 1.0）
+    equity = (1.0 + ordered["return"].astype(float)).cumprod()
     ax.plot(range(1, len(equity) + 1), equity.values, marker="o", label=label)
 
 
@@ -33,10 +34,10 @@ def write_plots(reports_dir: Path, *, trades: pd.DataFrame, trades_grey: pd.Data
                 _equity(ax, sub, version.replace("_", " "))
                 has_line = True
     if has_line:
-        ax.axhline(0, color="grey", lw=0.8)
-        ax.set_title("Cumulative net PnL (by exit order)")
+        ax.axhline(1.0, color="grey", lw=0.8)
+        ax.set_title("Compounded equity (equal-size bets, by exit order)")
         ax.set_xlabel("trade #")
-        ax.set_ylabel("cumulative net PnL (HKD)")
+        ax.set_ylabel("normalized equity (start=1.0)")
         ax.legend()
         fig.tight_layout()
         path = reports_dir / "equity_curve.png"

@@ -15,6 +15,12 @@ def baseline_mask(features: pd.DataFrame, config: StrategyConfig) -> pd.Series:
     return features["baseline_signal"].astype(bool)
 
 
+def reversal_mask(features: pd.DataFrame, config: StrategyConfig) -> pd.Series:
+    if "reversal_signal" not in features.columns:
+        return pd.Series(False, index=features.index)
+    return features["reversal_signal"].astype(bool)
+
+
 def improved_mask(features: pd.DataFrame, config: StrategyConfig) -> pd.Series:
     base = features["baseline_signal"].astype(bool)
     field = config.grey_filter_field
@@ -58,18 +64,20 @@ def generate_trades(
 
         exit_row = path.iloc[-1]
         exit_reason = "holding_period"
+        exit_raw = float(exit_row["close"])  # 未触发则末个有效交易日 close 出场
         stop_level = entry_price * (1 - config.stop_loss_pct)
         take_level = entry_price * (1 + config.take_profit_pct)
         for _, row in path.iterrows():
+            # 触发即在触发价位成交；若当日跳空已越过触发价，则按 open 成交（真实可得价）
+            day_open = float(row["open"])
             if float(row["low"]) <= stop_level:
-                exit_row, exit_reason = row, "stop_loss"
+                exit_row, exit_reason, exit_raw = row, "stop_loss", min(stop_level, day_open)
                 break
             if float(row["high"]) >= take_level:
-                exit_row, exit_reason = row, "take_profit"
+                exit_row, exit_reason, exit_raw = row, "take_profit", max(take_level, day_open)
                 break
         held_days = int(path[path["trade_date"] <= str(exit_row["trade_date"])].shape[0])
 
-        exit_raw = float(exit_row["close"])
         exit_price = apply_slippage(exit_raw, "sell", cost_model)
         buy_notional = entry_price * shares
         sell_notional = exit_price * shares

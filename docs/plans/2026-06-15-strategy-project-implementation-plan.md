@@ -61,7 +61,7 @@ download = { cmd = "python src/download_data.py --base-url http://127.0.0.1:9041
 features = { cmd = "python src/build_features.py", cwd = "strategy-project" }
 backtest = { cmd = "python src/backtest.py", cwd = "strategy-project" }
 pipeline = { cmd = "python src/download_data.py --source-root ../research-data && python src/build_features.py && python src/backtest.py", cwd = "strategy-project" }
-test = { cmd = "pytest -q", env = { RESEARCH_DATA_ROOT = "research-data" } }
+test = { cmd = "pytest -q", env = { XTMOCK_SILVER_ROOT = "sample-data", RESEARCH_DATA_ROOT = "research-data" } }
 ```
 
 - [ ] **Step 2: 安装并验证**

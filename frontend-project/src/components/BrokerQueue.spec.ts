@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { reactive, nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import BrokerQueue from './BrokerQueue.vue'
+import BrokerQueueRow from './BrokerQueueRow.vue'
 import type { QueueLevel } from '../services/marketFeed'
 
 function lvl(side: 'ask' | 'bid', position: number): QueueLevel {
@@ -25,5 +27,14 @@ describe('BrokerQueue', () => {
   it('fallback 时显示徽标', () => {
     const w = mount(BrokerQueue, { props: { ask, bid, gear: 10, expandedCells: new Set<string>(), symbol: 'A', fallback: true, sourceDate: '20260603' } })
     expect(w.text()).toContain('Fallback 20260603')
+  })
+
+  it('expandedCells（reactive Set）变化时行 expanded 响应更新', async () => {
+    const cells = reactive(new Set<string>())
+    const w = mount(BrokerQueue, { props: { ask: [lvl('ask', 1)], bid: [], gear: 10, expandedCells: cells, symbol: 'A' } })
+    expect(w.findComponent(BrokerQueueRow).props('expanded')).toBe(false)
+    cells.add('A|ask|1')
+    await nextTick()
+    expect(w.findComponent(BrokerQueueRow).props('expanded')).toBe(true)
   })
 })

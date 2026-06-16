@@ -24,7 +24,7 @@ function key(side: string, position: number) { return `${props.symbol}|${side}|$
       <div class="meta">
         <span v-if="fallback" class="fallback">Fallback {{ sourceDate }}</span>
         <div class="gears">
-          <button v-for="g in GEARS" :key="g" class="gear" :class="{ active: g === gear }" @click="emit('setGear', g)">{{ g }}</button>
+          <button v-for="g in GEARS" :key="g" class="gear" :class="{ active: g === gear }" :aria-pressed="g === gear" @click="emit('setGear', g)">{{ g }}</button>
         </div>
       </div>
     </div>

@@ -1811,3 +1811,18 @@ git commit -m "docs(frontend): README structure/state/broker-queue/mobile/tests/
 - **无占位符**：每个代码步骤含可运行代码与期望输出。
 - 唯一外部待确认项：lightweight-charts v5 的 `addSeries`/pane 签名（T15 已注明实现前用 context7 核对）。
 ```
+
+---
+
+## 进度更新（2026-06-17 完成）
+
+实施通过 subagent-driven 流程执行：17 个计划任务归并为 9 个实现单元，每单元两阶段评审（spec 合规 + 代码质量），共 24 个 commit。
+
+- 分支：`feat/frontend-market-terminal`（保持未合并、未 push）。
+- 单元：A 配置/类型、B 纯函数、C Pinia store、D 传输层、E 叶子组件、F BrokerQueue、G ChartPanel、H App 集成、I README/收尾 —— 全部 DONE，评审全过。
+- 验证门：`npm run test` 48/48（13 文件）；`npx vue-tsc --noEmit` clean；`npm run build` 成功。
+- 整体终审（opus）：**SHIP IT**，六条红线全部明确不存在，估分 99/100（唯一扣分点：移动端像素级回归留待 Playwright，属已声明限制）。
+- 评审吸收的修正：seq 在帧外层且 snapshot 不重置 maxSeq；alert 双校验 + 空 effective-day 返回空；broker queue 防御性整张拷贝；档位过滤 `position <= gear`；切日按新日过滤 alerts；BrokerCell key 用索引（防撞键丢 cell）；图表 `UTCTimestamp` 品牌类型去 `as never` + 懒构建 + pane 分离断言；`setVisible` 不进 trackedSymbols；`JSON.parse` 防护。
+
+### 待办（未在自动化流程内完成）
+- **浏览器实跑联调**（计划 T16 手动步骤）：根目录 `make serve` 起 mock-feed + `npm run dev`，浏览器验证实时渲染/重连/档位切换。静态门（build + 单测 + vue-tsc）已全绿，但未做真实渲染端到端验证。

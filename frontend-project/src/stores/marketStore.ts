@@ -4,6 +4,12 @@ import { barTradeDate, upsertBar } from './marketDelta'
 import { dedupeAlertsById, filterAlertsByTradeDate } from '../utils/alertFilter'
 import { filterLevelsByGear } from '../utils/brokerQueueFilter'
 
+function cloneQueue(q: BrokerQueue): BrokerQueue {
+  return { ...q, ask: q.ask.slice(), bid: q.bid.slice() }
+}
+
+const MAX_VISIBLE_ALERTS = 8
+
 export interface SymbolRecord {
   snapshot: SnapshotInner
   minuteBars: MarketBar[]
@@ -41,13 +47,17 @@ export const useMarketStore = defineStore('market', {
       return dedupeAlertsById(filterAlertsByTradeDate(r.alerts, r.snapshot.tradeDate))
         .slice()
         .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
-        .slice(0, 8)
+        .slice(0, MAX_VISIBLE_ALERTS)
     },
     activeDataTime(): string {
       const r = this.activeRecord
       if (!r) return ''
       const last = r.minuteBars.at(-1)?.timestamp || ''
-      return last > (r.snapshot.updatedAt || '') ? last : r.snapshot.updatedAt || ''
+      const updated = r.snapshot.updatedAt || ''
+      if (!last) return updated
+      if (!updated) return last
+      // 用 epoch 比较，避免不同时区格式（+08:00 vs Z）下字典序比较出错。
+      return Date.parse(last) >= Date.parse(updated) ? last : updated
     },
     displayStatus(): 'Live' | 'Warm' | 'Closed' | 'Connecting' | 'Error' {
       if (this.wsStatus === 'connecting') return 'Connecting'
@@ -85,7 +95,7 @@ export const useMarketStore = defineStore('market', {
         snapshot: { ...payload.snapshot },
         minuteBars: payload.minute_bars.slice(),
         alerts: payload.alerts.slice(),
-        brokerQueue: payload.broker_queue,
+        brokerQueue: cloneQueue(payload.broker_queue),
         freshness: payload.freshness || {},
         maxSeq: seq,
       }
@@ -98,9 +108,9 @@ export const useMarketStore = defineStore('market', {
         const bar = payload.minute_bar
         const newDay = barTradeDate(bar)
         if (newDay !== r.snapshot.tradeDate) {
-          // 切日：丢弃旧日 bars + alerts
+          // 切日：丢弃旧日 bars；alerts 按新交易日过滤（保留切日前已到达的新日 alert，丢弃旧日）。
           r.minuteBars = []
-          r.alerts = []
+          r.alerts = r.alerts.filter((a) => a.tradeDate === newDay)
           r.snapshot.tradeDate = newDay
         }
         r.minuteBars = upsertBar(r.minuteBars, bar)
@@ -114,7 +124,7 @@ export const useMarketStore = defineStore('market', {
         r.snapshot.price = payload.alert.price
         r.snapshot.updatedAt = payload.alert.timestamp
       } else if (payload.delta_type === 'broker_queue' && payload.broker_queue) {
-        r.brokerQueue = payload.broker_queue // 整张覆盖
+        r.brokerQueue = cloneQueue(payload.broker_queue) // 整张覆盖（防御性浅拷贝）
       }
       if (seq != null) r.maxSeq = seq
     },

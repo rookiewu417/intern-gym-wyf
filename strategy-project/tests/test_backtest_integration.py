@@ -70,3 +70,41 @@ def test_run_backtest_writes_outputs(tmp_path, monkeypatch):
     ds = metrics["data_snooping"]
     assert "reality_check_pvalue" in ds and "deflated_sharpe_ratio" in ds
     assert "Data-snooping" in report_text
+    # 尾部归因 + 外部行覆盖/可靠性口径进入产物
+    assert "tail_attribution" in metrics and "external_provenance" in metrics
+    assert "覆盖率/可靠性口径" in report_text
+
+
+def test_tail_attribution_quantifies_top_contributors():
+    trades = pd.DataFrame([
+        {"strategy_version": "improved_trailing_stop", "symbol": "A.HK", "return": 1.0},
+        {"strategy_version": "improved_trailing_stop", "symbol": "B.HK", "return": 0.5},
+        {"strategy_version": "improved_trailing_stop", "symbol": "C.HK", "return": -0.5},
+        {"strategy_version": "baseline_first_day_momentum_daily", "symbol": "D.HK", "return": 9.0},
+    ])
+    attr = backtest.tail_attribution(trades, version="improved_trailing_stop", top_n=2)
+    assert [s for s, _ in attr["top_contributors"]] == ["A.HK", "B.HK"]  # 按 return 降序取前 2
+    # 序贯复利：full = 2.0*1.5*0.5-1 = 0.5；剔除 top-2 后仅剩 C = 0.5-1 = -0.5
+    assert abs(attr["full_total_return"] - 0.5) < 1e-9
+    assert abs(attr["ex_top_total_return"] - (-0.5)) < 1e-9
+
+
+def test_external_provenance_counts_rows_fields_and_approx(tmp_path):
+    ext = tmp_path / "external"
+    ext.mkdir()
+    (ext / "ipo_info.csv").write_text(
+        "symbol,public_subscription_multiple,source_url,source_note,collected_at\n"
+        "01.HK,50,http://x,公开发售50倍,2026-06-15\n"
+        "02.HK,,http://y,孖展口径未单列(留空不填0),2026-06-15\n", encoding="utf-8")
+    (ext / "grey_market.csv").write_text(
+        "symbol,grey_close,grey_change_pct,source_url,source_note,collected_at\n"
+        "01.HK,12.0,0.2,http://x,暗盘收涨20%报12.0,2026-06-15\n"            # 明确收盘价
+        "02.HK,,0.26,http://y,暗盘涨25%-27%取中值0.26,2026-06-15\n"          # 近似(取中值 + grey_close 缺失)
+        "03.HK,,,http://z,暗盘数据未公开(留空不填0),2026-06-15\n", encoding="utf-8")  # 无值
+    prov = backtest.external_provenance(ext)
+    assert prov["external_ipo_rows_present"] == 2
+    assert prov["external_ipo_subscription_field_present"] == 1   # 行覆盖 2 > 超购字段覆盖 1
+    assert prov["external_grey_rows_present"] == 3
+    assert prov["external_grey_value_present"] == 2               # 01、02 有值，03 无
+    assert prov["external_grey_values_approximate"] == 1          # 仅 02 近似
+    assert prov["external_grey_values_reported_exact"] == 1       # 仅 01 明确

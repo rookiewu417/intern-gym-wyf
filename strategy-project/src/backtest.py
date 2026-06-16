@@ -106,6 +106,58 @@ def grey_return_analysis(features: pd.DataFrame, trades_grey: pd.DataFrame) -> t
     return strat, corr
 
 
+def tail_attribution(trades: pd.DataFrame, version: str = "improved_trailing_stop", top_n: int = 2) -> dict:
+    """尾部集中度归因：top-N 贡献者 + 剔除后 total_return（序贯复利，与 metrics 口径同源）。
+
+    让"收益集中于少数极热标的"从定性叙述变成可量化、可审计的证据。
+    """
+    sub = trades[trades["strategy_version"] == version] if "strategy_version" in trades.columns else trades
+    if sub.empty:
+        return {}
+    ranked = sub.sort_values("return", ascending=False)
+    top = [(str(s), float(r)) for s, r in zip(ranked["symbol"].head(top_n), ranked["return"].head(top_n))]
+    rest = ranked["return"].iloc[top_n:].astype(float)
+    full = float((1.0 + sub["return"].astype(float)).prod() - 1.0)
+    ex_top = float((1.0 + rest).prod() - 1.0) if len(rest) else 0.0
+    return {
+        "version": version,
+        "top_n": top_n,
+        "top_contributors": top,
+        "full_total_return": full,
+        "ex_top_total_return": ex_top,
+    }
+
+
+def external_provenance(external_root) -> dict[str, int]:
+    """从原始外部 CSV 统计【行覆盖】与【可靠性分级】，区别于 features 的【字段覆盖】。
+
+    - IPO 行覆盖(含发行价/保荐人/行业/来源) vs 超购字段覆盖：避免用单一字段低估调研广度。
+    - 暗盘数值可靠性：媒体明确收盘价 vs 近似值(取中值/区间/升幅描述)，标记后逐行可查。
+    """
+    from external_data import load_external  # 与 build_features 同一加载入口，保证口径一致
+
+    ipo, grey = load_external(external_root)  # load_external 内部已 Path() 归一
+
+    def _is_approx(note, grey_close) -> bool:
+        s = str(note or "")
+        # 近似标记：源文已注明取中值/近似/升幅区间，或仅有涨幅区间("-")、或收盘价未单列
+        return any(k in s for k in ("取中值", "近似", "超五成", "区间", "-")) or pd.isna(grey_close)
+
+    grey_present = int(grey["grey_change_pct"].notna().sum()) if not grey.empty else 0
+    grey_approx = 0
+    if not grey.empty:
+        present = grey[grey["grey_change_pct"].notna()]
+        grey_approx = int(sum(_is_approx(r.get("source_note"), r.get("grey_close")) for _, r in present.iterrows()))
+    return {
+        "external_ipo_rows_present": int(len(ipo)),
+        "external_ipo_subscription_field_present": int(ipo["public_subscription_multiple"].notna().sum()) if not ipo.empty else 0,
+        "external_grey_rows_present": int(len(grey)),
+        "external_grey_value_present": grey_present,
+        "external_grey_values_approximate": grey_approx,
+        "external_grey_values_reported_exact": grey_present - grey_approx,
+    }
+
+
 def external_coverage_from_features(features: pd.DataFrame) -> dict[str, float]:
     total = int(len(features))
 
@@ -183,8 +235,11 @@ def main() -> int:
         coverage = json.loads(cov_path.read_text(encoding="utf-8"))
     ext_cov = external_coverage_from_features(features)
     coverage.update(ext_cov)
+    provenance = external_provenance(RAW_DIR.parent / "external")
+    coverage.update(provenance)
 
     trades = run_all_versions(features, daily, cost_model)
+    tail_attr = tail_attribution(trades)
     by_version = metrics_by_version(trades)
     sensitivity = cost_sensitivity(features, daily, cost_model)
     sweep = grey_threshold_sweep(features, daily, cost_model)
@@ -226,6 +281,8 @@ def main() -> int:
         "selection_pvalue": selection_pvalue,
         "data_snooping": data_snooping,
         "external_coverage": ext_cov,
+        "external_provenance": provenance,
+        "tail_attribution": tail_attr,
     }
     (REPORTS_DIR / "metrics.json").write_text(
         json.dumps(_json_safe(metrics_payload), ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
@@ -235,7 +292,8 @@ def main() -> int:
         by_version=by_version, sensitivity=sensitivity, coverage=coverage, cost_model=cost_model,
         sub_stratification=sub_strat, grey_stratification=grey_strat, grey_corr=grey_corr,
         grey_sweep=sweep, trailing_sweep=trailing_sweep,
-        total_return_ci=total_return_ci, selection_pvalue=selection_pvalue, data_snooping=data_snooping, charts=charts,
+        total_return_ci=total_return_ci, selection_pvalue=selection_pvalue, data_snooping=data_snooping,
+        tail_attribution=tail_attr, charts=charts,
     )
     print(json.dumps(_json_safe(metrics_payload), ensure_ascii=False, indent=2))
     return 0

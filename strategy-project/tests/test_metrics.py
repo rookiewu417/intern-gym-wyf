@@ -45,6 +45,21 @@ def test_max_drawdown_counts_drop_from_initial_capital():
     assert abs(m["max_drawdown"] - (-0.1)) < 1e-9
 
 
+def test_max_drawdown_deterministic_under_same_exit_date_ties():
+    # 同一 exit_date 上一赢一输、其后再一笔：输入行序不应改变 max_drawdown。
+    # 稳定排序 + 次键 (exit_date, entry_date, symbol)：赢家 00001 按 symbol 升序排在输家 00002 前。
+    rows = [
+        {"return": 1.0, "net_pnl": 1000, "entry_price": 10, "shares": 10, "exit_date": "20260101", "entry_date": "20260101", "symbol": "00001.HK", "holding_days": 1},
+        {"return": -0.5, "net_pnl": -500, "entry_price": 10, "shares": 10, "exit_date": "20260101", "entry_date": "20260101", "symbol": "00002.HK", "holding_days": 1},
+        {"return": -0.5, "net_pnl": -500, "entry_price": 10, "shares": 10, "exit_date": "20260102", "entry_date": "20260101", "symbol": "00003.HK", "holding_days": 1},
+    ]
+    base = calculate_metrics(pd.DataFrame(rows))
+    shuffled = calculate_metrics(pd.DataFrame([rows[1], rows[0], rows[2]]))
+    assert base["max_drawdown"] == shuffled["max_drawdown"]  # 确定性：与输入行序无关
+    # 赢家先(00001<00002): equity=[2.0, 1.0, 0.5], peak=2.0 → 最深 (0.5-2.0)/2.0 = -0.75
+    assert abs(base["max_drawdown"] - (-0.75)) < 1e-9
+
+
 def test_profit_factor_infinite_when_no_losses():
     all_wins = pd.DataFrame([
         {"return": 0.1, "net_pnl": 100, "entry_price": 10, "shares": 10, "exit_date": "20260106", "entry_date": "20260105", "holding_days": 1},

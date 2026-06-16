@@ -46,4 +46,4 @@ pixi run test           # 策略 + research-api 测试
 
 ## 测试
 
-`pixi run test`（59 项）—— 覆盖无未来函数、成本/滑点/最低费、止损止盈触发价与跳空成交、**追踪止损（回撤触发/让赢家跑/无 look-ahead）**、停牌跳过、持仓窗口上界、复利回撤含初始资金、profit_factor 无亏损=∞、暗盘过滤、reversal 信号、bootstrap CI 与置换检验、**reality-check 多重惩罚单调性 / Holm / Deflated Sharpe 退化保护**、外部覆盖率（含信号标的口径）、阈值扫描稳健判据、标准 JSON 与图表产出。
+`pixi run test`（62 项）—— 覆盖无未来函数、成本/滑点/最低费、止损止盈触发价与跳空成交、**追踪止损（回撤触发/让赢家跑/无 look-ahead）**、停牌跳过、持仓窗口上界、复利回撤含初始资金、**max_drawdown 平局确定性（稳定排序+次键，可从 trades.csv 反推）**、profit_factor 无亏损=∞、暗盘过滤、reversal 信号、bootstrap CI 与置换检验、**reality-check 多重惩罚单调性 / Holm / Deflated Sharpe 退化保护**、外部覆盖率（含信号标的口径 + **行覆盖 vs 字段覆盖 + 可靠性分级**）、**尾部集中度归因**、阈值扫描稳健判据、标准 JSON 与图表产出。

@@ -105,7 +105,7 @@ def _img(charts: dict[str, str], key: str, alt: str) -> str:
     return f"![{alt}]({charts[key]})" if charts and key in charts else ""
 
 
-def _analysis(by_version: dict, grey_sweep: dict, grey_corr: float) -> str:
+def _analysis(by_version: dict, grey_sweep: dict, grey_corr: float, tail_attr: dict | None = None) -> str:
     base = by_version.get("baseline_first_day_momentum_daily", {})
     imp = by_version.get("improved_grey_market_filter", {})
     lines = []
@@ -164,7 +164,29 @@ def _analysis(by_version: dict, grey_sweep: dict, grey_corr: float) -> str:
     if grey_corr == grey_corr:  # not NaN
         sign = "正" if grey_corr > 0.1 else ("负" if grey_corr < -0.1 else "近似为零")
         lines.append(f"- **暗盘溢价与前向收益的 Spearman 相关 = {grey_corr:.2f}（{sign}相关）**。")
+    # 尾部集中度归因：把"收益靠少数极热标的"量化（top-N 贡献者 + 剔除后收益）
+    if tail_attr and tail_attr.get("top_contributors"):
+        tops = "、".join(f"{s}({r:+.0%})" for s, r in tail_attr["top_contributors"])
+        lines.append(
+            f"- **尾部集中度（{tail_attr.get('version','improved_trailing_stop')}）**：{tops} 贡献了几乎全部收益；"
+            f"剔除 top-{tail_attr.get('top_n',2)} 赢家后 total_return = {tail_attr.get('ex_top_total_return',0.0):.1%}"
+            f"（全样本 {tail_attr.get('full_total_return',0.0):.1%}）——收益由少数极热标的驱动、非普适 alpha，呼应单一普涨窗口的 Limitations。"
+        )
     return "\n".join(lines)
+
+
+def _reliability_line(cov: dict) -> str:
+    """外部数据覆盖率/可靠性口径：区分 IPO 行覆盖 vs 超购字段覆盖、暗盘明确值 vs 近似值。"""
+    if not cov or "external_ipo_rows_present" not in cov:
+        return ""
+    total = cov.get("external_symbols_total", "—")
+    return (
+        f"> 覆盖率/可靠性口径：IPO **行覆盖** {cov.get('external_ipo_rows_present','—')}/{total}"
+        f"（含发行价/保荐人/行业/来源），其中**超购字段**覆盖 {cov.get('external_ipo_subscription_field_present','—')}/{total}"
+        f"（其余为孖展口径或未单列，留空不填 0）；暗盘 {cov.get('external_grey_value_present','—')} 个数值中 "
+        f"{cov.get('external_grey_values_reported_exact','—')} 个为媒体明确收盘价、"
+        f"{cov.get('external_grey_values_approximate','—')} 个为近似（取中值/区间/升幅描述，已在 source_note 标注）。"
+    )
 
 
 def write_report_template(
@@ -182,6 +204,7 @@ def write_report_template(
     total_return_ci: dict | None = None,
     selection_pvalue: dict | None = None,
     data_snooping: dict | None = None,
+    tail_attribution: dict | None = None,
     charts: dict[str, str] | None = None,
 ) -> None:
     by_version = by_version or {}
@@ -196,10 +219,12 @@ def write_report_template(
     trailing_md = grey_sweep_table(trailing_sweep, label="trailing_stop_pct") if trailing_sweep else "(无 trailing 扫描数据)"
     robust_md = robustness_table(by_version, total_return_ci or {}, selection_pvalue or {}) if by_version else "(无诊断数据)"
     ds_md = data_snooping_section(data_snooping or {})
-    cov_md = "\n".join(f"- {k}: {v}" for k, v in (coverage or {}).items()) or "(无 coverage)"
+    cov = coverage or {}
+    cov_md = "\n".join(f"- {k}: {v}" for k, v in cov.items()) or "(无 coverage)"
+    reliability_line = _reliability_line(cov)
     sub_md = _md(sub_stratification, "(无分层数据)")
     grey_strat_md = _md(grey_stratification, "(无暗盘分层数据)")
-    analysis_md = _analysis(by_version, grey_sweep, grey_corr)
+    analysis_md = _analysis(by_version, grey_sweep, grey_corr, tail_attribution)
     cm = cost_model or {}
     cost_line = (
         f"成本（本次运行实际值）：买入 {float(cm.get('buy_cost_bps',0)):g}bps、"
@@ -224,6 +249,8 @@ def write_report_template(
 API 下载覆盖、缺失/停牌/无成交，及自行调研的 IPO/暗盘来源与可靠性（来源逐行见 `data/external/*.csv`）：
 
 {cov_md}
+
+{reliability_line}
 
 ## Strategy Definition
 

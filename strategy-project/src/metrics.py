@@ -18,7 +18,10 @@ def calculate_metrics(trades: pd.DataFrame) -> dict[str, float]:
             "average_holding_days": 0.0,
         }
 
-    ordered = trades.sort_values("exit_date") if "exit_date" in trades.columns else trades
+    # 同一 exit_date 的平局用稳定排序 + 客观次键(entry_date, symbol)定序：让路径依赖的
+    # max_drawdown 既与输入行序无关(确定可复现)，又能从交付的 trades.csv 反推一致。
+    _tie_keys = [c for c in ("exit_date", "entry_date", "symbol") if c in trades.columns]
+    ordered = trades.sort_values(_tie_keys, kind="mergesort") if _tie_keys else trades
     returns = ordered["return"].astype(float)
     pnl = ordered["net_pnl"].astype(float)
     wins = returns[returns > 0]

@@ -1,11 +1,12 @@
+import type { UTCTimestamp } from 'lightweight-charts'
 import type { MarketBar } from '../services/marketFeed'
 
-export interface Candle { time: number; open: number; high: number; low: number; close: number }
-export interface VolumePoint { time: number; value: number; color: string }
+export interface Candle { time: UTCTimestamp; open: number; high: number; low: number; close: number }
+export interface VolumePoint { time: UTCTimestamp; value: number; color: string }
 
 // 分钟级 K 线必须用 UTC epoch 秒作为 time，date-only 会把全天塌成一根。
-export function timeToEpochSec(ts: string): number {
-  return Math.floor(Date.parse(ts) / 1000)
+export function timeToEpochSec(ts: string): UTCTimestamp {
+  return Math.floor(Date.parse(ts) / 1000) as UTCTimestamp
 }
 
 export function toCandles(bars: MarketBar[]): Candle[] {

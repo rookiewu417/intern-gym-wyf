@@ -44,25 +44,26 @@ function build() {
 
 function render() {
   if (!candleSeries || !volumeSeries) return
-  candleSeries.setData(toCandles(props.bars) as never)
-  volumeSeries.setData(toVolumes(props.bars) as never)
+  candleSeries.setData(toCandles(props.bars))
+  volumeSeries.setData(toVolumes(props.bars))
   chart?.timeScale().fitContent()
 }
 
 function dispose() {
   chart?.remove()
-  chart = null
-  candleSeries = null
-  volumeSeries = null
+  chart = null; candleSeries = null; volumeSeries = null
 }
 
-onMounted(build)
-onBeforeUnmount(dispose)
+function ensureChart() {
+  if (!chart && props.bars.length) build()
+}
 
-// 切换 symbol 时整体重建，防止 series/canvas 泄漏
-watch(() => props.symbol, () => { dispose(); build() })
-// 同 symbol 数据刷新时只更新数据
-watch(() => props.bars, render, { deep: false })
+onMounted(ensureChart)
+onBeforeUnmount(dispose)
+// 切 symbol：销毁并（若有 bars）重建，防 series/canvas 泄漏
+watch(() => props.symbol, () => { dispose(); ensureChart() })
+// bars 到达：首次构建图表，之后仅更新数据
+watch(() => props.bars, () => { if (!chart) ensureChart(); else render() }, { deep: false })
 </script>
 
 <template>

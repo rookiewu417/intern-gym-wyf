@@ -131,11 +131,12 @@ export class MarketFeedClient {
 
   requestSnapshots(symbols: string[]) {
     symbols.forEach((s) => this.trackedSymbols.add(s))
+    // CONNECTING 时不直发：onopen 会按 trackedSymbols 统一补发，避免重复。
     if (this.ws?.readyState === WebSocket.OPEN) this.sendNow('snapshot_request', symbols)
   }
 
   setVisible(symbols: string[]) {
-    symbols.forEach((s) => this.trackedSymbols.add(s))
+    // visible_set 只声明屏幕可见集，不改变 monitored universe，故不进入 reconnect 的 trackedSymbols。
     this.sendCommand('visible_set', symbols)
   }
 
@@ -165,8 +166,9 @@ export class MarketFeedClient {
   }
 
   private handleMessage(raw: string) {
-    const frame = JSON.parse(raw)
-    const seq = Number(frame.seq || 0)
+    let frame: any
+    try { frame = JSON.parse(raw) } catch { return } // 坏帧静默丢弃，不中断后续消息
+    const seq = frame.seq != null ? Number(frame.seq) : 0
     if (frame.type === 'snapshot') this.handlers.onSnapshot?.(frame.symbol, frame.payload, seq)
     if (frame.type === 'delta') this.handlers.onDelta?.(frame.symbol, frame.payload, seq)
   }

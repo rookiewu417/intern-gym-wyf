@@ -14,6 +14,7 @@ const overflow = computed(() => Math.max(0, props.level.brokers.length - VISIBLE
 <template>
   <li class="row">
     <div class="head">
+      <span class="side" :class="level.side">{{ level.side === 'ask' ? '卖' : '买' }}</span>
       <span class="pos">{{ level.position }}档</span>
       <strong>{{ formatPrice(level.price) }}</strong>
       <em>{{ formatCompact(level.volume) }}</em>
@@ -28,10 +29,13 @@ const overflow = computed(() => Math.max(0, props.level.brokers.length - VISIBLE
 
 <style scoped>
 .row { list-style: none; border-bottom: 1px solid #eef2f6; padding: 6px 0; }
-/* 固定档头四列轨道宽度：展开/收起 cells 不改变列宽 */
-.head { display: grid; grid-template-columns: 48px 1fr 72px 48px; gap: 8px; align-items: center; font-size: 13px; }
+/* 固定档头五列轨道宽度（side/档位/价/量/家数）：展开/收起 cells 不改变列宽 */
+.head { display: grid; grid-template-columns: 28px 44px 1fr 64px 40px; gap: 8px; align-items: center; font-size: 13px; }
 .head em { color: #344054; font-style: normal; text-align: right; }
 .head small { color: #667085; text-align: right; }
+.side { display: inline-block; width: 20px; text-align: center; border-radius: 3px; font-size: 12px; line-height: 18px; }
+.side.ask { background: #fdecec; color: #b42318; }
+.side.bid { background: #e9f8ef; color: #137333; }
 .cells { margin-top: 4px; }
 .more { padding: 2px 6px; margin: 2px; border: 1px solid #cfd7e2; border-radius: 4px; background: #f7f9fc; font-size: 12px; cursor: pointer; }
 </style>

@@ -1,28 +1,29 @@
-export interface SnapshotPayload {
-  symbol: string
-  snapshot: {
-    symbol: string
-    name: string
-    currency?: string
-    price: number
-    open?: number
-    high?: number
-    low?: number
-    volume?: number
-    turnover?: number
-    updatedAt: string
-    tradeDate: string
-  }
-  minute_bars: MarketBar[]
-  alerts: TradeAlert[]
-  broker_queue: {
-    ask: QueueLevel[]
-    bid: QueueLevel[]
-    sourceDate?: string
-    historical?: boolean
-    fallback?: boolean
-  }
-  freshness: Record<string, unknown>
+export type Gear = 10 | 100 | 1000
+export type WsStatus = 'connecting' | 'open' | 'closed' | 'error'
+
+export interface BrokerCell {
+  brokerCode: string
+  displayName: string
+  volume: number
+}
+
+export interface QueueLevel {
+  id: string
+  side: 'ask' | 'bid'
+  position: number
+  gear: number
+  price: number
+  volume: number
+  brokerCount: number
+  brokers: BrokerCell[]
+}
+
+export interface BrokerQueue {
+  ask: QueueLevel[]
+  bid: QueueLevel[]
+  sourceDate?: string
+  historical?: boolean
+  fallback?: boolean
 }
 
 export interface MarketBar {
@@ -40,6 +41,7 @@ export interface TradeAlert {
   id: string
   timestamp: string
   tradeDate: string
+  sourceDate: string
   price: number
   volume: number
   turnover: number
@@ -47,22 +49,39 @@ export interface TradeAlert {
   thresholdVolume?: number
 }
 
-export interface QueueLevel {
-  id: string
-  side: 'ask' | 'bid'
-  position: number
-  gear: number
+export interface SnapshotInner {
+  symbol: string
+  name: string
+  currency?: string
   price: number
-  volume: number
-  brokerCount: number
-  brokers: Array<{ brokerCode: string; displayName: string; volume: number }>
+  open?: number
+  high?: number
+  low?: number
+  volume?: number
+  turnover?: number
+  updatedAt: string
+  tradeDate: string
+}
+
+export interface SnapshotPayload {
+  symbol: string
+  snapshot: SnapshotInner
+  minute_bars: MarketBar[]
+  alerts: TradeAlert[]
+  broker_queue: BrokerQueue
+  freshness: {
+    runtime_state?: string
+    effective_day?: string
+    source_dates?: Record<string, string>
+  }
 }
 
 export interface DeltaPayload {
   delta_type?: 'minute_bar' | 'trade_tick' | 'broker_queue'
   minute_bar?: MarketBar
+  tick?: unknown
   alert?: TradeAlert | null
-  broker_queue?: SnapshotPayload['broker_queue']
+  broker_queue?: BrokerQueue
 }
 
 interface ClientHandlers {

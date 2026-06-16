@@ -167,3 +167,24 @@ def test_trailing_stop_uses_prior_high_not_current_day_high():
     trades = generate_trades(_trailing_feats(), daily, MODEL, version="improved_trailing_stop", mask=baseline_mask, config=cfg)
     row = trades.iloc[0]
     assert row["exit_reason"] == "holding_period"
+
+
+# --- 停牌/缺失：持仓窗口按交易日历跨度锚定，中途停牌不延长敞口 ---
+
+def test_holding_window_suspension_does_not_extend_exposure():
+    # entry=20260106、持 3 日窗口=06/07/08；07 停牌 → 只在 06、08 可交易。
+    # 出场应落在窗口末有效日 08（而非把窗口顺延到窗口外的 09），并标记 suspended_during_hold。
+    feats = pd.DataFrame([{"symbol": "1.HK", "coverage_start": "20260102", "entry_date": "20260106", "baseline_signal": True}])
+    daily = pd.DataFrame([
+        {"symbol": "1.HK", "trade_date": "20260105", "open": 100, "high": 105, "low": 99,  "close": 102, "volume": 10, "turnover": 1, "previous_close": 100, "suspend_flag": 0},
+        {"symbol": "1.HK", "trade_date": "20260106", "open": 100, "high": 103, "low": 99,  "close": 101, "volume": 10, "turnover": 1, "previous_close": 102, "suspend_flag": 0},  # entry
+        {"symbol": "1.HK", "trade_date": "20260107", "open": 0,   "high": 0,   "low": 0,   "close": 0,   "volume": 0,  "turnover": 0, "previous_close": 101, "suspend_flag": 1},  # 停牌（窗口内）
+        {"symbol": "1.HK", "trade_date": "20260108", "open": 102, "high": 104, "low": 100, "close": 103, "volume": 10, "turnover": 1, "previous_close": 101, "suspend_flag": 0},
+        {"symbol": "1.HK", "trade_date": "20260109", "open": 103, "high": 999, "low": 103, "close": 500, "volume": 10, "turnover": 1, "previous_close": 103, "suspend_flag": 0},  # 窗口外，不应被触及
+    ])
+    cfg = StrategyConfig(holding_days=3, stop_loss_pct=0.99, take_profit_pct=9.99)  # 止损止盈都不触发
+    trades = generate_trades(feats, daily, MODEL, version="baseline_first_day_momentum_daily", mask=baseline_mask, config=cfg)
+    row = trades.iloc[0]
+    assert row["exit_date"] == "20260108"           # 窗口末有效日，未因停牌顺延到窗口外 20260109
+    assert row["exit_reason"] == "holding_period"
+    assert bool(row["suspended_during_hold"]) is True

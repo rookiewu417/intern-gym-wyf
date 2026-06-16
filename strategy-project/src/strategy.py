@@ -46,31 +46,35 @@ def generate_trades(
     for feature in selected.to_dict("records"):
         symbol = str(feature["symbol"])
         entry_date = str(feature["entry_date"])
-        symbol_bars = bars[(bars["symbol"] == symbol) & (bars["tradable"])].sort_values("trade_date").reset_index(drop=True)
-        entry_matches = symbol_bars[symbol_bars["trade_date"] == entry_date]
+        # 持仓窗口锚定在「交易日历跨度」K 根 bar（含期间停牌 bar）：停牌占用窗口名额而非
+        # 延长真实敞口；窗口内只在 tradable bar 上交易，并记录窗口是否含停牌（suspended_during_hold）。
+        symbol_all = bars[bars["symbol"] == symbol].sort_values("trade_date").reset_index(drop=True)
+        entry_matches = symbol_all[(symbol_all["trade_date"] == entry_date) & symbol_all["tradable"]]
         if entry_matches.empty:
             continue
         entry_index = int(entry_matches.index[0])
-        path = symbol_bars.iloc[entry_index: entry_index + max(1, config.holding_days)]
-        if path.empty:
+        window = symbol_all.iloc[entry_index: entry_index + max(1, config.holding_days)]
+        tradable_window = window[window["tradable"]]
+        if tradable_window.empty:
             continue
+        suspended_during_hold = bool((~window["tradable"]).any())
 
-        entry_row = path.iloc[0]
+        entry_row = tradable_window.iloc[0]
         entry_raw = float(entry_row["open"])
         entry_price = apply_slippage(entry_raw, "buy", cost_model)
         shares = int(config.notional_per_trade // entry_price) if entry_price > 0 else 0
         if shares <= 0:
             continue
 
-        exit_row = path.iloc[-1]
+        exit_row = tradable_window.iloc[-1]
         exit_reason = "holding_period"
-        exit_raw = float(exit_row["close"])  # 未触发则末个有效交易日 close 出场
+        exit_raw = float(exit_row["close"])  # 未触发则窗口内末个有效交易日 close 出场
         if config.trailing_stop_pct is not None:
             # 追踪止损：止损线=移动高点*(1-trail)、只上移；进入当日用截至昨日的高点判触发，
             # 收盘后才更新高点 → 不会用当日 high 抬线又用当日 low 判触发（无日内未来函数）
             trail = config.trailing_stop_pct
             hwm = entry_price
-            for _, row in path.iterrows():
+            for _, row in tradable_window.iterrows():
                 trail_line = hwm * (1 - trail)
                 if float(row["low"]) <= trail_line:
                     exit_row, exit_reason, exit_raw = row, "trailing_stop", min(trail_line, float(row["open"]))
@@ -79,7 +83,7 @@ def generate_trades(
         else:
             stop_level = entry_price * (1 - config.stop_loss_pct)
             take_level = entry_price * (1 + config.take_profit_pct)
-            for _, row in path.iterrows():
+            for _, row in tradable_window.iterrows():
                 # 触发即在触发价位成交；若当日跳空已越过触发价，则按 open 成交（真实可得价）
                 day_open = float(row["open"])
                 if float(row["low"]) <= stop_level:
@@ -88,7 +92,7 @@ def generate_trades(
                 if float(row["high"]) >= take_level:
                     exit_row, exit_reason, exit_raw = row, "take_profit", max(take_level, day_open)
                     break
-        held_days = int(path[path["trade_date"] <= str(exit_row["trade_date"])].shape[0])
+        held_days = int(tradable_window[tradable_window["trade_date"] <= str(exit_row["trade_date"])].shape[0])
 
         exit_price = apply_slippage(exit_raw, "sell", cost_model)
         buy_notional = entry_price * shares
@@ -114,6 +118,7 @@ def generate_trades(
             "exit_reason": exit_reason,
             "holding_days": held_days,
             "strategy_version": version,
+            "suspended_during_hold": suspended_during_hold,  # 审计标记（15 必备字段之外的附加列）
         })
 
     return pd.DataFrame(trades)

@@ -264,10 +264,10 @@
 
   <!-- ============ STAT BAND ============ -->
   <div class="statband">
-    <div class="s"><span class="n">28</span><span class="c">新增提交</span></div>
-    <div class="s"><span class="n">41</span><span class="c">文件变更</span></div>
-    <div class="s"><span class="n"><span class="pm">+</span>6542</span><span class="c">新增行数</span></div>
-    <div class="s"><span class="n">62</span><span class="c">测试全过</span></div>
+    <div class="s"><span class="n">31</span><span class="c">新增提交</span></div>
+    <div class="s"><span class="n">42</span><span class="c">文件变更</span></div>
+    <div class="s"><span class="n"><span class="pm">+</span>7332</span><span class="c">新增行数</span></div>
+    <div class="s"><span class="n">63</span><span class="c">测试全过</span></div>
     <div class="s"><span class="n">4</span><span class="c">策略版本</span></div>
   </div>
 
@@ -285,7 +285,7 @@
         <tr><td><strong>正确性</strong><br><span style="font-size:13px;color:var(--ink-soft)">能不能发现脚手架里的坑</span></td><td>审计出 2 个真 bug（持仓窗口跨笔污染、回撤非时序）+ 2 条评分红线（fillna(0) 伪造停牌、横截面未来函数），均有 before/after 代码与回归测试。</td><td><a href="#s3" style="color:var(--oxblood)">§03</a></td></tr>
         <tr><td><strong>研究诚实</strong><br><span style="font-size:13px;color:var(--ink-soft)">敢不敢否定自己</span></td><td>首版 improved 一度回测 <span class="pos">+64.2%</span>，我发现出场口径高估后改保守，亲手把它砍到 <span class="neg">+0.9%</span>；又把一个回测 +43.5% 的多因子打分用同一套检验证伪、<strong>主动删除</strong>。</td><td><a href="#s4" style="color:var(--oxblood)">§04</a></td></tr>
         <tr><td><strong>方法论</strong><br><span style="font-size:13px;color:var(--ink-soft)">懂不懂统计陷阱</span></td><td>五层抗 data-snooping 校验：Bootstrap CI + 置换检验 + White Reality Check + Holm + Deflated Sharpe，量化「试 N 个配置挑最好」的选择偏差。</td><td><a href="#s6" style="color:var(--oxblood)">§06</a></td></tr>
-        <tr><td><strong>工程质量</strong><br><span style="font-size:13px;color:var(--ink-soft)">能不能复现</span></td><td>pixi 锁定环境、62 项测试、参数集中、研究报告由代码<strong>全自动幂等生成</strong>（无手工编辑）。</td><td><a href="#s8" style="color:var(--oxblood)">§08</a></td></tr>
+        <tr><td><strong>工程质量</strong><br><span style="font-size:13px;color:var(--ink-soft)">能不能复现</span></td><td>pixi 锁定环境、63 项测试、参数集中、研究报告由代码<strong>全自动幂等生成</strong>（无手工编辑）。</td><td><a href="#s8" style="color:var(--oxblood)">§08</a></td></tr>
       </tbody>
     </table>
     <div class="pq">这份交付的核心卖点是<b>严谨的研究方法</b>，而不是一个好看的收益数字。</div>
@@ -332,7 +332,7 @@
         </ul>
       </div>
     </div>
-    <p style="font-size:15px;color:var(--ink-soft)">规模：<strong>41 个文件变更，+6542 / −188 行</strong>。<code>src/</code> 从 9 个文件扩到 14 个（新增 config / daily_utils / external_data / stats / plots）；<code>tests/</code> 从 1 个文件扩到 13 个。</p>
+    <p style="font-size:15px;color:var(--ink-soft)">规模：<strong>42 个文件变更，+7332 / −192 行</strong>。<code>src/</code> 从 9 个文件扩到 14 个（新增 config / daily_utils / external_data / stats / plots）；<code>tests/</code> 从 1 个文件扩到 13 个。</p>
   </section>
 
   <!-- ============ 03 脚手架审计 ============ -->
@@ -515,7 +515,7 @@
       <thead><tr><th style="width:24%">维度</th><th>做法</th></tr></thead>
       <tbody>
         <tr><td><strong>环境锁定</strong></td><td><code>pixi.toml</code> + <code>pixi.lock</code> 固定 Python 3.12 与全部依赖；<code>pixi run download/features/backtest/pipeline/test</code> 封装文档原命令，<code>pipeline</code> 可离线串联（<code>--source-root</code> 跳过 HTTP API）。</td></tr>
-        <tr><td><strong>测试</strong></td><td>上游脚手架几乎无测试 → <strong>13 文件 62 项，≈2s 全过</strong>。覆盖无未来函数、成本 / 滑点 / 最低费、止损止盈触发价与跳空成交、追踪止损无 look-ahead、停牌跳过、两个 bug 的回归、<strong>回撤平局确定性</strong>、<strong>尾部集中度归因</strong>、五层统计检验、外部覆盖率（行 vs 字段 + 可靠性分级）、阈值扫描稳健判据。</td></tr>
+        <tr><td><strong>测试</strong></td><td>上游脚手架几乎无测试 → <strong>13 文件 63 项，≈2s 全过</strong>。覆盖无未来函数、成本 / 滑点 / 最低费、止损止盈触发价与跳空成交、追踪止损无 look-ahead、停牌跳过、<strong>持仓窗口按交易日历跨度（中途停牌不延长敞口）</strong>、两个 bug 的回归、<strong>回撤平局确定性</strong>、<strong>尾部集中度归因</strong>、五层统计检验、外部覆盖率（行 vs 字段 + 可靠性分级）、阈值扫描稳健判据。</td></tr>
         <tr><td><strong>参数集中</strong></td><td>新增 <code>config.py</code> 把阈值 / 持仓 / 止损止盈 / notional / 暗盘阈值 / 成本缩放 / 缺失策略全部集中，杜绝硬编码散落。</td></tr>
         <tr><td><strong>报告可复现</strong></td><td><code>research_report.md</code>（含 Analysis 与 Limitations）<strong>由 backtest.py 全自动生成、重跑幂等</strong>，不依赖任何手工编辑 —— 数字与结论永远和代码一致。</td></tr>
         <tr><td><strong>外部数据合规</strong></td><td><code>ipo_info.csv</code> + <code>grey_market.csv</code> 每行带 <code>source_url</code>、缺失留空不填 0；覆盖率多口径如实给出（universe grey 12/65、IPO 行 15/65 vs 超购字段 10/65；信号标的 grey 12/14 ≈ 85.7%）；暗盘 12 个值<strong>可靠性分级</strong>标注（9 媒体明确价 / 3 近似）。</td></tr>
@@ -587,7 +587,7 @@
     </div>
     <div class="conclusion">
       <div class="ck">Final Verdict</div>
-      <p>在上游纯脚手架上<strong>只动 strategy 方向</strong>：审计修复 2 个静默真 bug（持仓窗口跨笔污染、回撤非时序），把 2 条评分红线升级为端到端数据契约，并将单一 baseline 重构为<strong>统一回测引擎 + 4 个策略版本 + 外部数据 + 62 项测试 + 全自动幂等报告</strong>。</p>
+      <p>在上游纯脚手架上<strong>只动 strategy 方向</strong>：审计修复 2 个静默真 bug（持仓窗口跨笔污染、回撤非时序），把 2 条评分红线升级为端到端数据契约，并将单一 baseline 重构为<strong>统一回测引擎 + 4 个策略版本 + 外部数据 + 63 项测试 + 全自动幂等报告</strong>。</p>
       <p>更重要的是研究态度：我两次拿到好看的结果（improved <em>+64.2%</em>、多因子 <em>+43.5%</em>），都用<em>五层抗 data-snooping 检验</em>把它们证伪并亲手推翻。最终主结论是诚实的「本样本上没有稳健选股 alpha」—— 这份交付卖的是<strong>方法的可信</strong>，不是数字的好看。</p>
     </div>
   </section>

@@ -1,3 +1,4 @@
+// UI broker-queue filter-tier selection (10/100/1000 档 toggle). NOT the per-row gear value.
 export type Gear = 10 | 100 | 1000
 export type WsStatus = 'connecting' | 'open' | 'closed' | 'error'
 
@@ -11,7 +12,7 @@ export interface QueueLevel {
   id: string
   side: 'ask' | 'bid'
   position: number
-  gear: number
+  gear: number // raw position from server (gear === position; can be any int, e.g. 819)
   price: number
   volume: number
   brokerCount: number
@@ -42,6 +43,7 @@ export interface TradeAlert {
   timestamp: string
   tradeDate: string
   sourceDate: string
+  historical?: boolean
   price: number
   volume: number
   turnover: number

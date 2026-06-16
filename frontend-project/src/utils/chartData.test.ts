@@ -18,7 +18,7 @@ describe('timeToEpochSec', () => {
 describe('toCandles', () => {
   it('映射 OHLC + epoch time', () => {
     expect(toCandles(bars)[0]).toMatchObject({ open: 10, high: 12, low: 9, close: 11 })
-    expect(typeof toCandles(bars)[0].time).toBe('number')
+    expect(toCandles(bars)[0].time).toBe(timeToEpochSec(bars[0].timestamp))
   })
 })
 

@@ -31,4 +31,7 @@ describe('levelTotalVolume', () => {
     ], brokerCount: 2 }
     expect(levelTotalVolume(level)).toBe(750)
   })
+  it('空 brokers 返回 0', () => {
+    expect(levelTotalVolume(lvl(1, 0))).toBe(0)
+  })
 })

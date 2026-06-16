@@ -32,7 +32,7 @@ export const useMarketStore = defineStore('market', {
     records: {},
     activeSymbol: '',
     wsStatus: 'connecting',
-    brokerQueueGear: 10,
+    brokerQueueGear: 1000, // 默认显示全深度；真实盘口 position 稀疏可达 ~1000，默认 10 会让多数标的空档
     expandedCells: new Set<string>(),
   }),
 

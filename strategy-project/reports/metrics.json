@@ -1,0 +1,403 @@
+{
+  "by_version": {
+    "baseline_first_day_momentum_daily": {
+      "trade_count": 14,
+      "win_rate": 0.2857142857142857,
+      "average_return": -0.004397799999999995,
+      "average_win": 0.19496264,
+      "average_loss": -0.084141976,
+      "profit_factor": 0.9262912869967744,
+      "total_return": -0.15335985620681736,
+      "max_drawdown": -0.4594982767626885,
+      "turnover": 1399040.38274,
+      "average_holding_days": 1.1428571428571428
+    },
+    "improved_grey_market_filter": {
+      "trade_count": 12,
+      "win_rate": 0.3333333333333333,
+      "average_return": 0.008892896000000003,
+      "average_win": 0.19496264,
+      "average_loss": -0.08414197599999998,
+      "profit_factor": 1.1579969184824845,
+      "total_return": 0.009351766597561983,
+      "max_drawdown": -0.409841144507665,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 1.1666666666666667
+    },
+    "improved_trailing_stop": {
+      "trade_count": 12,
+      "win_rate": 0.4166666666666667,
+      "average_return": 0.10251656193843099,
+      "average_win": 0.390906087713223,
+      "average_loss": -0.10347595647213478,
+      "profit_factor": 2.698132071554048,
+      "total_return": 1.1255874139599502,
+      "max_drawdown": -0.53448949635541,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 1.6666666666666667
+    },
+    "reversal_first_day_daily": {
+      "trade_count": 27,
+      "win_rate": 0.3333333333333333,
+      "average_return": 0.002095395986207328,
+      "average_win": 0.16097486891255702,
+      "average_loss": -0.07734434047696753,
+      "profit_factor": 1.0405638737031024,
+      "total_return": -0.11548809548811867,
+      "max_drawdown": -0.3526158724384677,
+      "turnover": 2699261.2546899994,
+      "average_holding_days": 1.5555555555555556
+    }
+  },
+  "cost_sensitivity": {
+    "baseline_first_day_momentum_daily": {
+      "0.5": {
+        "trade_count": 14,
+        "win_rate": 0.2857142857142857,
+        "average_return": -0.0021994499999999214,
+        "average_win": 0.19748066,
+        "average_loss": -0.08207149399999988,
+        "profit_factor": 0.9615991550455119,
+        "total_return": -0.1267017262396306,
+        "max_drawdown": -0.4508866546673669,
+        "turnover": 1398679.860435,
+        "average_holding_days": 1.1428571428571428
+      },
+      "1.0": {
+        "trade_count": 14,
+        "win_rate": 0.2857142857142857,
+        "average_return": -0.004397799999999995,
+        "average_win": 0.19496264,
+        "average_loss": -0.084141976,
+        "profit_factor": 0.9262912869967744,
+        "total_return": -0.15335985620681736,
+        "max_drawdown": -0.4594982767626885,
+        "turnover": 1399040.38274,
+        "average_holding_days": 1.1428571428571428
+      },
+      "2.0": {
+        "trade_count": 14,
+        "win_rate": 0.2857142857142857,
+        "average_return": -0.008791200000000015,
+        "average_win": 0.18993055999999994,
+        "average_loss": -0.08827990399999999,
+        "profit_factor": 0.8604144606479893,
+        "total_return": -0.20438722338583704,
+        "max_drawdown": -0.48206487308523305,
+        "turnover": 1399210.8059399999,
+        "average_holding_days": 1.1428571428571428
+      }
+    },
+    "improved_grey_market_filter": {
+      "0.5": {
+        "trade_count": 12,
+        "win_rate": 0.3333333333333333,
+        "average_return": 0.011112557333333412,
+        "average_win": 0.19748066,
+        "average_loss": -0.08207149399999988,
+        "profit_factor": 1.2021086244743642,
+        "total_return": 0.03644172338281848,
+        "max_drawdown": -0.40179072580993264,
+        "turnover": 1198743.182055,
+        "average_holding_days": 1.1666666666666667
+      },
+      "1.0": {
+        "trade_count": 12,
+        "win_rate": 0.3333333333333333,
+        "average_return": 0.008892896000000003,
+        "average_win": 0.19496264,
+        "average_loss": -0.08414197599999998,
+        "profit_factor": 1.1579969184824845,
+        "total_return": 0.009351766597561983,
+        "max_drawdown": -0.409841144507665,
+        "turnover": 1199052.7548999998,
+        "average_holding_days": 1.1666666666666667
+      },
+      "2.0": {
+        "trade_count": 12,
+        "win_rate": 0.3333333333333333,
+        "average_return": 0.0044569173333333136,
+        "average_win": 0.18993055999999994,
+        "average_loss": -0.08827990399999999,
+        "profit_factor": 1.0756072058721735,
+        "total_return": -0.04285288718831293,
+        "max_drawdown": -0.42565986574553494,
+        "turnover": 1199246.07474,
+        "average_holding_days": 1.1666666666666667
+      }
+    },
+    "reversal_first_day_daily": {
+      "0.5": {
+        "trade_count": 27,
+        "win_rate": 0.3333333333333333,
+        "average_return": 0.004401284528240699,
+        "average_win": 0.16362095797421738,
+        "average_loss": -0.07520855219474763,
+        "profit_factor": 1.0876815182568291,
+        "total_return": -0.05876618931552291,
+        "max_drawdown": -0.3365369686527621,
+        "turnover": 2698859.6054249993,
+        "average_holding_days": 1.5555555555555556
+      },
+      "1.0": {
+        "trade_count": 27,
+        "win_rate": 0.3333333333333333,
+        "average_return": 0.002095395986207328,
+        "average_win": 0.16097486891255702,
+        "average_loss": -0.07734434047696753,
+        "profit_factor": 1.0405638737031024,
+        "total_return": -0.11548809548811867,
+        "max_drawdown": -0.3526158724384677,
+        "turnover": 2699261.2546899994,
+        "average_holding_days": 1.5555555555555556
+      },
+      "2.0": {
+        "trade_count": 27,
+        "win_rate": 0.3333333333333333,
+        "average_return": -0.0025118378919723517,
+        "average_win": 0.1556888346966277,
+        "average_loss": -0.08161217418627238,
+        "profit_factor": 0.953547668991779,
+        "total_return": -0.21912705070467786,
+        "max_drawdown": -0.3884514498839292,
+        "turnover": 2698969.23414,
+        "average_holding_days": 1.5555555555555556
+      }
+    },
+    "improved_trailing_stop": {
+      "0.5": {
+        "trade_count": 12,
+        "win_rate": 0.4166666666666667,
+        "average_return": 0.1052142858030608,
+        "average_win": 0.39443511938158143,
+        "average_loss": -0.10137202389588248,
+        "profit_factor": 2.778180168041163,
+        "total_return": 1.188550957749574,
+        "max_drawdown": -0.526789333728233,
+        "turnover": 1198743.182055,
+        "average_holding_days": 1.6666666666666667
+      },
+      "1.0": {
+        "trade_count": 12,
+        "win_rate": 0.4166666666666667,
+        "average_return": 0.10251656193843099,
+        "average_win": 0.390906087713223,
+        "average_loss": -0.10347595647213478,
+        "profit_factor": 2.698132071554048,
+        "total_return": 1.1255874139599502,
+        "max_drawdown": -0.53448949635541,
+        "turnover": 1199052.7548999998,
+        "average_holding_days": 1.6666666666666667
+      },
+      "2.0": {
+        "trade_count": 12,
+        "win_rate": 0.3333333333333333,
+        "average_return": 0.09712889313860883,
+        "average_win": 0.47999337076441156,
+        "average_loss": -0.09430334567429254,
+        "profit_factor": 2.5456311238066935,
+        "total_return": 1.0047675739691466,
+        "max_drawdown": -0.5495550631362326,
+        "turnover": 1199246.07474,
+        "average_holding_days": 1.6666666666666667
+      }
+    }
+  },
+  "grey_threshold_sweep": {
+    "0.0": {
+      "trade_count": 12,
+      "win_rate": 0.3333333333333333,
+      "average_return": 0.008892896000000003,
+      "average_win": 0.19496264,
+      "average_loss": -0.08414197599999998,
+      "profit_factor": 1.1579969184824845,
+      "total_return": 0.009351766597561983,
+      "max_drawdown": -0.409841144507665,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 1.1666666666666667
+    },
+    "0.1": {
+      "trade_count": 10,
+      "win_rate": 0.3,
+      "average_return": -0.0004105912000000156,
+      "average_win": 0.19496263999999996,
+      "average_loss": -0.08414197600000002,
+      "profit_factor": 0.9923322089002697,
+      "total_return": -0.07772578811593367,
+      "max_drawdown": -0.3556218976880037,
+      "turnover": 999088.3903000001,
+      "average_holding_days": 1.2
+    },
+    "0.2": {
+      "trade_count": 10,
+      "win_rate": 0.3,
+      "average_return": -0.0004105912000000156,
+      "average_win": 0.19496263999999996,
+      "average_loss": -0.08414197600000002,
+      "profit_factor": 0.9923322089002697,
+      "total_return": -0.07772578811593367,
+      "max_drawdown": -0.3556218976880037,
+      "turnover": 999088.3903000001,
+      "average_holding_days": 1.2
+    },
+    "0.3": {
+      "trade_count": 8,
+      "win_rate": 0.25,
+      "average_return": -0.014365822000000026,
+      "average_win": 0.19496263999999996,
+      "average_loss": -0.08414197600000002,
+      "profit_factor": 0.7723977517352117,
+      "total_return": -0.15729109508210304,
+      "max_drawdown": -0.3556218976880035,
+      "turnover": 799388.4898999999,
+      "average_holding_days": 1.25
+    },
+    "0.5": {
+      "trade_count": 7,
+      "win_rate": 0.2857142857142857,
+      "average_return": -0.004397800000000031,
+      "average_win": 0.19496263999999996,
+      "average_loss": -0.08414197600000002,
+      "profit_factor": 0.9269462348271296,
+      "total_return": -0.07986949632501472,
+      "max_drawdown": -0.3556218976880037,
+      "turnover": 699429.1303999999,
+      "average_holding_days": 1.0
+    },
+    "1.0": {
+      "trade_count": 2,
+      "win_rate": 1.0,
+      "average_return": 0.19496263999999996,
+      "average_win": 0.19496263999999996,
+      "average_loss": 0.0,
+      "profit_factor": null,
+      "total_return": 0.42793571099576955,
+      "max_drawdown": 0.0,
+      "turnover": 199855.25559999997,
+      "average_holding_days": 1.0
+    }
+  },
+  "trailing_stop_sweep": {
+    "0.08": {
+      "trade_count": 12,
+      "win_rate": 0.4166666666666667,
+      "average_return": 0.12152099507933718,
+      "average_win": 0.4094491545904092,
+      "average_loss": -0.08414197599999998,
+      "profit_factor": 3.47554612157642,
+      "total_return": 1.6323082049180977,
+      "max_drawdown": -0.45949827676268845,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 1.5833333333333333
+    },
+    "0.1": {
+      "trade_count": 12,
+      "win_rate": 0.4166666666666667,
+      "average_return": 0.10251656193843099,
+      "average_win": 0.390906087713223,
+      "average_loss": -0.10347595647213478,
+      "profit_factor": 2.698132071554048,
+      "total_return": 1.1255874139599502,
+      "max_drawdown": -0.53448949635541,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 1.6666666666666667
+    },
+    "0.15": {
+      "trade_count": 12,
+      "win_rate": 0.4166666666666667,
+      "average_return": 0.10660234305648512,
+      "average_win": 0.41886705062299506,
+      "average_loss": -0.11644387663387915,
+      "profit_factor": 2.5691343731555167,
+      "total_return": 0.9731589688355624,
+      "max_drawdown": -0.55328425724867,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 2.5
+    },
+    "0.2": {
+      "trade_count": 12,
+      "win_rate": 0.3333333333333333,
+      "average_return": 0.046044689805625476,
+      "average_win": 0.43027370083573213,
+      "average_loss": -0.14606981570942784,
+      "profit_factor": 1.4727939329514088,
+      "total_return": 0.015802161505330092,
+      "max_drawdown": -0.6885065142564756,
+      "turnover": 1199052.7548999998,
+      "average_holding_days": 2.9166666666666665
+    }
+  },
+  "grey_return_spearman": -0.1188811188811189,
+  "total_return_ci": {
+    "baseline_first_day_momentum_daily": [
+      -0.618828572502023,
+      0.8805174820873622
+    ],
+    "improved_grey_market_filter": [
+      -0.5455731026432633,
+      1.2419249271106465
+    ],
+    "improved_trailing_stop": [
+      -0.5323669265792732,
+      12.370124004037592
+    ],
+    "reversal_first_day_daily": [
+      -0.69821678048954,
+      1.9760442622822194
+    ]
+  },
+  "selection_pvalue": {
+    "improved_grey_market_filter": 0.507
+  },
+  "data_snooping": {
+    "reality_check_pvalue": 0.13786213786213786,
+    "holm_min_adjusted_pvalue": 0.396,
+    "holm_adjusted_pvalues": {
+      "grey>=1": 0.396,
+      "grey>=0": 1.0,
+      "grey>=0.1": 1.0,
+      "grey>=0.2": 1.0,
+      "grey>=0.5": 1.0,
+      "grey>=0.3": 1.0
+    },
+    "deflated_sharpe_ratio": 0.0,
+    "n_trials": 14,
+    "observed_best_total_return": 0.42793571099576955,
+    "dsr_strategy": "improved_grey_market_filter@grey>=0",
+    "dsr_n_obs": 12
+  },
+  "external_coverage": {
+    "external_symbols_total": 65,
+    "external_grey_change_pct_present": 12,
+    "external_grey_coverage_ratio": 0.1846,
+    "external_ipo_subscription_present": 10,
+    "external_ipo_coverage_ratio": 0.1538,
+    "external_signal_symbols_total": 14,
+    "external_grey_present_on_signals": 12,
+    "external_grey_coverage_on_signals": 0.8571
+  },
+  "external_provenance": {
+    "external_ipo_rows_present": 15,
+    "external_ipo_subscription_field_present": 10,
+    "external_grey_rows_present": 14,
+    "external_grey_value_present": 12,
+    "external_grey_values_approximate": 3,
+    "external_grey_values_reported_exact": 9
+  },
+  "tail_attribution": {
+    "version": "improved_trailing_stop",
+    "top_n": 2,
+    "top_contributors": [
+      [
+        "02723.HK",
+        0.8808740839160841
+      ],
+      [
+        "02513.HK",
+        0.5984773261723704
+      ]
+    ],
+    "full_total_return": 1.1255874139599515,
+    "ex_top_total_return": -0.2930108203123759
+  }
+}

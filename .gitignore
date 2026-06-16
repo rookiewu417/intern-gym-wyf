@@ -9,9 +9,17 @@ dist/
 *.log
 strategy-project/data/raw/*
 !strategy-project/data/raw/.gitkeep
+# Required Outputs：提交进库，评审无需运行 pipeline 即可查看
+!strategy-project/data/raw/ipo_universe.parquet
+!strategy-project/data/raw/daily_bars.parquet
+!strategy-project/data/raw/cost_model.json
+!strategy-project/data/raw/coverage_summary.json
 strategy-project/data/processed/*
 !strategy-project/data/processed/.gitkeep
+!strategy-project/data/processed/features.parquet
 strategy-project/reports/*
 !strategy-project/reports/.gitkeep
+!strategy-project/reports/trades.csv
+!strategy-project/reports/metrics.json
 .pixi/
 .vscode/

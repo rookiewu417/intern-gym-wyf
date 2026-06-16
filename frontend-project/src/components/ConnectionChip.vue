@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 const props = defineProps<{ status: 'Live' | 'Warm' | 'Closed' | 'Connecting' | 'Error' }>()
-const cls = () => props.status.toLowerCase()
+const cls = computed(() => props.status.toLowerCase())
 </script>
 
 <template>
-  <strong class="chip" :class="cls()">{{ status }}</strong>
+  <strong class="chip" :class="cls">{{ status }}</strong>
 </template>
 
 <style scoped>

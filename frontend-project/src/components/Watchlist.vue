@@ -13,7 +13,10 @@ const filtered = computed(() => {
 
 function submit() {
   const q = search.value.trim().toUpperCase()
-  if (q && !props.symbols.includes(q)) emit('add', q)
+  if (q && !props.symbols.includes(q)) {
+    emit('add', q)
+    search.value = ''
+  }
 }
 </script>
 

@@ -20,7 +20,7 @@ const overflow = computed(() => Math.max(0, props.level.brokers.length - VISIBLE
       <small>{{ level.brokerCount }} 家</small>
     </div>
     <div class="cells">
-      <BrokerCell v-for="b in shown" :key="b.brokerCode + b.volume" :broker="b" />
+      <BrokerCell v-for="(b, i) in shown" :key="i" :broker="b" />
       <button v-if="overflow" class="more" @click="emit('toggle')">{{ expanded ? '收起' : `+${overflow}` }}</button>
     </div>
   </li>

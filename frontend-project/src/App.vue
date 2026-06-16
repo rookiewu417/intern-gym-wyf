@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { formatCompact, formatDateTime, formatPrice, runtimeLabel } from './utils/marketFormat'
-import { MarketFeedClient, type DeltaPayload, type MarketBar, type QueueLevel, type SnapshotPayload, type TradeAlert } from './services/marketFeed'
+import { MarketFeedClient, type DeltaPayload, type MarketBar, type QueueLevel, type SnapshotPayload, type TradeAlert, type WsStatus } from './services/marketFeed'
 
 const symbols = ['02723.HK', '02675.HK', '00100.HK', '02513.HK', '06082.HK']
 const activeSymbol = ref(symbols[0])
-const status = ref<'open' | 'closed' | 'error'>('closed')
+const status = ref<WsStatus>('closed')
 const search = ref('')
 const snapshots = ref<Record<string, SnapshotPayload>>({})
 
@@ -89,10 +89,10 @@ onMounted(() => {
     onStatus: (value) => {
       status.value = value
     },
-    onSnapshot: (symbol, payload) => {
+    onSnapshot: (symbol, payload, _seq) => {
       snapshots.value = { ...snapshots.value, [symbol]: payload }
     },
-    onDelta: applyDelta,
+    onDelta: (symbol, payload, _seq) => applyDelta(symbol, payload),
   })
   client.connect()
   client.requestSnapshots(symbols)

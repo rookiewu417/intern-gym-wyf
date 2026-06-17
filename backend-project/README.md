@@ -82,7 +82,9 @@ PR 里说明：
 
 ## 实现说明
 
-完整设计与逐任务 TDD 计划见 `docs/plans/2026-06-17-backend-market-state-engine-fullscore.md`。模块拆分（单一职责、xtquant 仅 `adapters/`、业务仅 `state/`、协议仅 `gateway/`）：`models.py`（`frame`/`SymbolState`/常量）、`transforms.py`（参考纯转换逐字复制 + flatten/时间本地化）、`adapters/xtquant_adapter.py`（唯一 xtquant 边界）、`state/engine.py`（状态机 + `BaselineStore`）、`bridge.py`（线程→asyncio 桥）、`gateway/ws.py`（WS 协议）、`app.py`（装配根）。
+> 本任务已在本仓库完整实现，**40 个测试全绿**。PR 提交说明（含 tradeoff 与已知限制）见 [`SUBMISSION.md`](./SUBMISSION.md)；完整设计与逐任务 TDD 计划见 [`../docs/plans/2026-06-17-backend-market-state-engine-fullscore.md`](../docs/plans/2026-06-17-backend-market-state-engine-fullscore.md)。
+
+模块拆分（单一职责、xtquant 仅 `adapters/`、业务仅 `state/`、协议仅 `gateway/`）：`models.py`（`frame`/`SymbolState`/常量）、`transforms.py`（参考纯转换逐字复制 + flatten/时间本地化）、`adapters/xtquant_adapter.py`（唯一 xtquant 边界）、`state/engine.py`（状态机 + `BaselineStore`）、`bridge.py`（线程→asyncio 桥）、`gateway/ws.py`（WS 协议）、`app.py`（装配根）。
 
 ### 状态机设计
 每个 symbol 一个 `SymbolState`：`payload`（snapshot/minute_bars/alerts/broker_queue/freshness）、`seq`、`base_seq`、`deltas`（512 深环形缓冲）、`seen_tick_ids`、`last_queue_ts`、`lock`。freshness 三态：`hydrate` 后 `WARM` → 首个 live 事件经 `touch_freshness` 翻 `LIVE`。`apply(period,symbol,payload)` 是状态迁移的唯一入口，返回现成 delta 帧给 gateway，本身不碰 socket，故可像 `test_smoke` 一样独立单测。

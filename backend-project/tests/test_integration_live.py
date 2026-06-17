@@ -1,6 +1,8 @@
 import asyncio
 import os
 
+from xtquant import xtdata
+
 from market_state_engine.state.engine import MarketStateEngine, BaselineStore
 from market_state_engine.adapters.xtquant_adapter import XtquantAdapter
 from market_state_engine.bridge import ThreadAsyncBridge
@@ -12,6 +14,11 @@ def test_live_event_flows_to_broadcast_with_monotonic_seq(monkeypatch):
     # 故把 effective_day 钉到 20260601，让早期 1m/tick 事件命中有效日，真正走通三类 delta（含 trade_tick）。
     monkeypatch.setenv("XTMOCK_REPLAY_MAX_EVENTS_PER_SUBSCRIPTION", "8")
     monkeypatch.setenv("MARKET_EFFECTIVE_DAY", "20260601")
+    # xtdata 持有 module 级 ReplayEngine 单例，config 在构造时由 load_config() 冻结读取一次。
+    # 若先前测试已实例化（默认 cap=0 不限），上面的 setenv 不会被 subscribe_quote 看到。
+    # 故清空单例：下次 _get_engine() 会在已打补丁的 env 下重建，让 8 事件/订阅上限真正生效
+    # （monkeypatch.setattr 会在用例结束自动还原；隔离运行下亦幂等）。
+    monkeypatch.setattr(xtdata, "_engine", None, raising=False)
 
     async def main():
         store = BaselineStore().load()

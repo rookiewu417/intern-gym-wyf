@@ -5,7 +5,7 @@ PORT ?= 9021
 RESEARCH_PORT ?= 9041
 RESEARCH_DATA_ROOT ?= research-data
 
-.PHONY: install build-data smoke serve serve-research test test-research smoke-strategy-api
+.PHONY: install build-data smoke serve serve-backend serve-research test test-research smoke-strategy-api
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -42,3 +42,8 @@ smoke-strategy-api:
 		$(PYTHON) src/download_data.py --base-url http://127.0.0.1:$(RESEARCH_PORT) --start 2026-01-01 && \
 		$(PYTHON) src/build_features.py && \
 		$(PYTHON) src/backtest.py
+
+serve-backend:
+	PYTHONPATH=mock-xtquant/src:backend-project/src XTMOCK_SILVER_ROOT=sample-data \
+		MARKET_SYMBOLS="$(SYMBOLS)" XTMOCK_REPLAY_MAX_EVENTS_PER_SUBSCRIPTION=2000 \
+		$(PYTHON) -m market_state_engine.app

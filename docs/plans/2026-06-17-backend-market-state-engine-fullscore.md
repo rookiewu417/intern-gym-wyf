@@ -1805,3 +1805,11 @@ git commit -m "docs(backend): README impl notes + SUBMISSION PR draft + serve-ba
   - Workflow #2（计划对抗验证，5 agents / 42 万 token）：4 审查 agent **实跑真实数据**（py_compile + 真实 `get_market_data_ex`/`subscribe_quote`）+ 1 裁决。捕获我与 Workflow #1 都搞错的根因 blocker（1m `time` 是 epoch 秒非毫秒），并驳回 1 个过度断言。
   - 全部 must-fix（`ms_to_hk_iso`/`iso_from_any` 按量级兼容）+ 高价值 nice-to-have（10 位秒单测、集成测试断言 ≥1 trade_tick、SUBMISSION 补两条已知限制）已内建。裁决判定：应用 must-fix 后 **40 个测试全通过、100/100 高置信**。
   - 状态：**计划就绪（仅产出文档，未动 `backend-project/src`）**，等待执行决策。
+
+- **2026-06-17 实现完成（subagent-driven，9 个 Task 串行）**：
+  - 每个 Task：派实现 subagent（TDD：失败测试→实现→通过→提交）→ spec 合规审查 → 代码质量审查，全部独立读码验证。分支 `feat/backend-market-state-engine`（off main），13 个提交。
+  - 全部 8 模块 + 10 测试落地，**后端 40/40 测试通过**（含真实 xtdata 数据 + 真实订阅 daemon 线程端到端集成）。
+  - 执行中两处审查发现已修：Task 5 error 帧 `request_id` 移至顶层信封（payload contract 一致性）；Task 7 重置 `xtdata._engine` 单例使回放上限在全套件生效（可靠性）。
+  - Task 8 实现 agent 基础设施性卡死（600s 无输出），由主控直接补完文档（Makefile `serve-backend` + README 实现说明 + SUBMISSION 6 条已知限制）。
+  - **整体收尾审查（opus）裁决：SHIP — ~100/100，无 must-fix**。五条红线逐一带证据规避、四大不变量端到端验证、模块边界干净、文档诚实无 overclaim。
+  - 已知环境注意（非代码缺陷）：本机 venv 为 Python 3.14 + websockets 15，`make serve-backend` 的 WS 握手会失败（reviewer 证明 stock websockets 与参考 `make serve` 同样失败；仓库声明支持 3.12/3.13；gateway 协议已被 FakeWS 单测全覆盖）。`make test` 全量另有 2 个**预存非后端**失败（strategy 缺 matplotlib、research-api 在 3.14 下 JSONDecodeError），与本分支无关。

@@ -1335,6 +1335,7 @@ def test_unknown_command_returns_error():
     run(gw.handle_client(ws))
     assert types(ws) == ["hello", "heartbeat", "ack", "error"]
     assert ws.sent[-1]["payload"]["code"] == "unknown_command"
+    assert ws.sent[-1]["request_id"] == "x"   # request_id 必须在顶层信封，与 ack/heartbeat 一致
 
 
 def test_resume_request_streams_deltas():
@@ -1409,7 +1410,7 @@ class Gateway:
         elif name == "onboard_request":
             await self._onboard(ws, symbols)
         else:
-            await self._send(ws, frame("error", payload={"code": "unknown_command", "message": name, "request_id": request_id}))
+            await self._send(ws, frame("error", request_id=request_id, payload={"code": "unknown_command", "message": name}))
 
     async def _onboard(self, ws, symbols: list[str]) -> None:
         loop = asyncio.get_running_loop()
@@ -1633,6 +1634,8 @@ Expected: PASS (4 passed)
 import asyncio
 import os
 
+from xtquant import xtdata
+
 from market_state_engine.state.engine import MarketStateEngine, BaselineStore
 from market_state_engine.adapters.xtquant_adapter import XtquantAdapter
 from market_state_engine.bridge import ThreadAsyncBridge
@@ -1644,6 +1647,10 @@ def test_live_event_flows_to_broadcast_with_monotonic_seq(monkeypatch):
     # 故把 effective_day 钉到 20260601，让早期 1m/tick 事件命中有效日，真正走通三类 delta（含 trade_tick）。
     monkeypatch.setenv("XTMOCK_REPLAY_MAX_EVENTS_PER_SUBSCRIPTION", "8")
     monkeypatch.setenv("MARKET_EFFECTIVE_DAY", "20260601")
+    # xtdata 持有 module 级 ReplayEngine 单例（config 构造时冻结读取一次）。若前序测试已实例化
+    # （默认 cap=0 不限），上面的 setenv 不会被 subscribe_quote 看到。清空单例 → 下次 _get_engine()
+    # 在已打补丁的 env 下重建，让 8 事件/订阅上限真正生效（monkeypatch 用例结束自动还原）。
+    monkeypatch.setattr(xtdata, "_engine", None, raising=False)
 
     async def main():
         store = BaselineStore().load()

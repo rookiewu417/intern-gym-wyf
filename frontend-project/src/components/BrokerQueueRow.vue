@@ -38,4 +38,12 @@ const overflow = computed(() => Math.max(0, props.level.brokers.length - VISIBLE
 .side.bid { background: #e9f8ef; color: #137333; }
 .cells { margin-top: 4px; }
 .more { padding: 2px 6px; margin: 2px; border: 1px solid #cfd7e2; border-radius: 4px; background: #f7f9fc; font-size: 12px; cursor: pointer; }
+@media (max-width: 900px) {
+  .row { padding: 10px 0; }
+  .head { grid-template-columns: 34px 56px 1fr 84px 52px; gap: 10px; font-size: 16px; }
+  .side { width: 28px; line-height: 24px; font-size: 14px; border-radius: 4px; }
+  .head small { font-size: 13px; }
+  .cells { margin-top: 8px; }
+  .more { padding: 5px 12px; font-size: 13px; }
+}
 </style>

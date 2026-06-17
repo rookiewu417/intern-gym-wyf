@@ -20,5 +20,10 @@ defineProps<{ snapshot?: SnapshotInner; runtimeState?: string }>()
 .quote-strip div { background: #fff; padding: 12px; min-width: 0; }
 .quote-strip span { color: #667085; font-size: 12px; }
 .quote-strip strong { display: block; margin-top: 4px; font-size: 18px; }
-@media (max-width: 900px) { .quote-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 900px) {
+  .quote-strip { grid-template-columns: repeat(3, 1fr); }
+  .quote-strip div { padding: 12px 10px; }
+  .quote-strip span { font-size: 13px; }
+  .quote-strip strong { margin-top: 6px; font-size: 20px; }
+}
 </style>

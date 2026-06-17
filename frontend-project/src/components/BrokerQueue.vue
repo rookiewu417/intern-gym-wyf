@@ -62,7 +62,13 @@ ol { list-style: none; margin: 0; padding: 0; }
 /* 买卖各占固定一列，列宽不随档内展开变化 */
 .queues { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 900px) {
-  .queues { grid-template-columns: 1fr; }
-  .queues > div { max-height: 360px; overflow-y: auto; }  /* 保证买卖各 >=10 档可滚动 */
+  .panel { padding: 12px; }
+  .panel-title { flex-wrap: wrap; gap: 8px; }
+  h2 { font-size: 17px; }
+  h3 { font-size: 15px; margin-bottom: 10px; }
+  .fallback { font-size: 13px; }
+  .gear { padding: 9px 16px; font-size: 15px; }
+  /* 面板独占整屏：买卖纵向铺开、随页面滚动（>=10 档全可见） */
+  .queues { grid-template-columns: 1fr; gap: 20px; }
 }
 </style>

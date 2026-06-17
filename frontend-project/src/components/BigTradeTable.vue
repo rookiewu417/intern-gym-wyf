@@ -29,5 +29,12 @@ defineProps<{ alerts: TradeAlert[] }>()
 h2 { margin: 0; font-size: 15px; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { border-bottom: 1px solid #e3e8ef; padding: 8px 6px; text-align: left; }
-th { color: #667085; font-weight: 600; }
+th { color: #667085; font-weight: 600; white-space: nowrap; }
+@media (max-width: 900px) {
+  .panel { padding: 12px; }
+  h2 { font-size: 17px; }
+  table { font-size: 15px; }
+  th, td { padding: 13px 8px; }
+  th { font-size: 13px; }
+}
 </style>

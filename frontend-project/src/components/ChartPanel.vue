@@ -110,9 +110,12 @@ h2 {
   color: #667085;
 }
 @media (max-width: 900px) {
+  .panel { padding: 12px; }
+  h2 { font-size: 17px; }
+  .panel-title span { font-size: 13px; }
   .chart-host,
   .empty {
-    height: 280px;
+    height: 420px;
   }
 }
 </style>

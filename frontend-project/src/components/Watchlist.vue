@@ -54,12 +54,14 @@ function submit() {
 .empty { color: #667085; font-size: 12px; margin: 0; }
 
 @media (max-width: 900px) {
-  /* 置顶：搜索独占一行，下面是可横滑的 symbol chip 条 */
-  .watchlist { min-width: 0; position: sticky; top: 0; z-index: 5; padding: 10px 12px; border-right: 0; border-bottom: 1px solid #d7dde5; }
-  .search { margin-bottom: 10px; }
-  .items { flex-direction: row; overflow-x: auto; gap: 8px; padding-bottom: 2px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
-  .item { width: auto; flex: 0 0 auto; min-width: 104px; max-width: 150px; padding: 8px 12px; }
+  /* 搜索独占一行，下面是可横滑的 symbol chip 条 */
+  .watchlist { min-width: 0; padding: 12px 14px; border-right: 0; border-bottom: 1px solid #d7dde5; }
+  .search { margin-bottom: 12px; }
+  .search input { height: 44px; font-size: 16px; }
+  .items { flex-direction: row; overflow-x: auto; gap: 10px; padding-bottom: 4px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .item { width: auto; flex: 0 0 auto; min-width: 120px; max-width: 170px; padding: 10px 14px; }
   .item.active { background: #eef4ff; }
-  .item span { font-size: 14px; }
+  .item span { font-size: 16px; }
+  .item small { font-size: 13px; }
 }
 </style>

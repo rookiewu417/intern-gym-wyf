@@ -6,7 +6,7 @@
 
 **核心设计决策**：把参考实现 `mock-feed/server.py`（`backend-project/tests/test_contracts.py` 校验的可执行规范）的纯业务转换函数**逐字复制**到 `transforms.py`，保证输出与规范逐字节一致；真正新写的只有 5 处：SDK 嵌套队列展平、线程→asyncio 桥、per-symbol seq + delta 环形缓冲 + reconnect 续传、动态 onboard、`frame.source="candidate-backend"`。
 
-8 个职责单一的模块、40 个对抗式测试。逐任务 TDD 计划见 `docs/plans/2026-06-17-backend-market-state-engine-fullscore.md`。
+8 个职责单一的模块、40 个对抗式测试。
 
 ## 状态机设计
 

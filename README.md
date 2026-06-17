@@ -12,7 +12,7 @@
 
 > 候选人 fork 后**完成其中一个**。每个项目自带任务说明、运行方式与提交清单。
 
-**本仓库实现进度**：`backend-project` 已在本分支完整实现（**40 个测试全绿**，端到端真实订阅集成）——提交说明见 [backend-project/SUBMISSION.md](backend-project/SUBMISSION.md)、设计与逐任务 TDD 计划见 [docs/plans/2026-06-17-backend-market-state-engine-fullscore.md](docs/plans/2026-06-17-backend-market-state-engine-fullscore.md)。`strategy-project` 为可运行 scaffold 并已附完整研究结论；`frontend-project` 的任务骨架见其目录。
+**本仓库实现进度**：`backend-project` 已在本分支完整实现（**40 个测试全绿**，端到端真实订阅集成）——提交说明见 [backend-project/SUBMISSION.md](backend-project/SUBMISSION.md)。`strategy-project` 为可运行 scaffold 并已附完整研究结论；`frontend-project` 的任务骨架见其目录。
 
 ## 两个数据面 / 两个服务器（不要混用）
 

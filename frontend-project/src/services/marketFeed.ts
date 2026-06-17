@@ -1,28 +1,30 @@
-export interface SnapshotPayload {
-  symbol: string
-  snapshot: {
-    symbol: string
-    name: string
-    currency?: string
-    price: number
-    open?: number
-    high?: number
-    low?: number
-    volume?: number
-    turnover?: number
-    updatedAt: string
-    tradeDate: string
-  }
-  minute_bars: MarketBar[]
-  alerts: TradeAlert[]
-  broker_queue: {
-    ask: QueueLevel[]
-    bid: QueueLevel[]
-    sourceDate?: string
-    historical?: boolean
-    fallback?: boolean
-  }
-  freshness: Record<string, unknown>
+// UI broker-queue filter-tier selection (10/100/1000 档 toggle). NOT the per-row gear value.
+export type Gear = 10 | 100 | 1000
+export type WsStatus = 'connecting' | 'open' | 'closed' | 'error'
+
+export interface BrokerCell {
+  brokerCode: string
+  displayName: string
+  volume: number
+}
+
+export interface QueueLevel {
+  id: string
+  side: 'ask' | 'bid'
+  position: number
+  gear: number // raw position from server (gear === position; can be any int, e.g. 819)
+  price: number
+  volume: number
+  brokerCount: number
+  brokers: BrokerCell[]
+}
+
+export interface BrokerQueue {
+  ask: QueueLevel[]
+  bid: QueueLevel[]
+  sourceDate?: string
+  historical?: boolean
+  fallback?: boolean
 }
 
 export interface MarketBar {
@@ -40,6 +42,8 @@ export interface TradeAlert {
   id: string
   timestamp: string
   tradeDate: string
+  sourceDate: string
+  historical?: boolean
   price: number
   volume: number
   turnover: number
@@ -47,28 +51,45 @@ export interface TradeAlert {
   thresholdVolume?: number
 }
 
-export interface QueueLevel {
-  id: string
-  side: 'ask' | 'bid'
-  position: number
-  gear: number
+export interface SnapshotInner {
+  symbol: string
+  name: string
+  currency?: string
   price: number
-  volume: number
-  brokerCount: number
-  brokers: Array<{ brokerCode: string; displayName: string; volume: number }>
+  open?: number
+  high?: number
+  low?: number
+  volume?: number
+  turnover?: number
+  updatedAt: string
+  tradeDate: string
+}
+
+export interface SnapshotPayload {
+  symbol: string
+  snapshot: SnapshotInner
+  minute_bars: MarketBar[]
+  alerts: TradeAlert[]
+  broker_queue: BrokerQueue
+  freshness: {
+    runtime_state?: string
+    effective_day?: string
+    source_dates?: Record<string, string>
+  }
 }
 
 export interface DeltaPayload {
   delta_type?: 'minute_bar' | 'trade_tick' | 'broker_queue'
   minute_bar?: MarketBar
+  tick?: unknown
   alert?: TradeAlert | null
-  broker_queue?: SnapshotPayload['broker_queue']
+  broker_queue?: BrokerQueue
 }
 
 interface ClientHandlers {
-  onStatus?: (status: 'open' | 'closed' | 'error') => void
-  onSnapshot?: (symbol: string, payload: SnapshotPayload) => void
-  onDelta?: (symbol: string, payload: DeltaPayload) => void
+  onStatus?: (status: WsStatus) => void
+  onSnapshot?: (symbol: string, payload: SnapshotPayload, seq: number) => void
+  onDelta?: (symbol: string, payload: DeltaPayload, seq: number) => void
 }
 
 export class MarketFeedClient {
@@ -76,6 +97,7 @@ export class MarketFeedClient {
   private reconnectTimer: number | null = null
   private closedByClient = false
   private pendingCommands: string[] = []
+  private trackedSymbols = new Set<string>()
 
   constructor(
     private readonly url: string,
@@ -84,75 +106,70 @@ export class MarketFeedClient {
 
   connect() {
     this.closedByClient = false
-    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) {
-      return
-    }
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) return
+    this.handlers.onStatus?.('connecting')
     this.ws = new WebSocket(this.url)
     this.ws.onopen = () => {
       this.handlers.onStatus?.('open')
       this.flushPending()
+      if (this.trackedSymbols.size) this.sendNow('snapshot_request', [...this.trackedSymbols])
     }
     this.ws.onerror = () => this.handlers.onStatus?.('error')
     this.ws.onclose = () => {
       this.handlers.onStatus?.('closed')
-      if (!this.closedByClient) {
-        this.reconnectTimer = window.setTimeout(() => this.connect(), 1000)
-      }
+      if (!this.closedByClient) this.reconnectTimer = window.setTimeout(() => this.connect(), 1000)
     }
     this.ws.onmessage = (event) => this.handleMessage(event.data)
   }
 
   close() {
     this.closedByClient = true
-    if (this.reconnectTimer !== null) {
-      window.clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
-    }
+    if (this.reconnectTimer !== null) { window.clearTimeout(this.reconnectTimer); this.reconnectTimer = null }
     this.ws?.close()
     this.ws = null
   }
 
   requestSnapshots(symbols: string[]) {
-    this.sendCommand('snapshot_request', symbols)
+    symbols.forEach((s) => this.trackedSymbols.add(s))
+    // CONNECTING 时不直发：onopen 会按 trackedSymbols 统一补发，避免重复。
+    if (this.ws?.readyState === WebSocket.OPEN) this.sendNow('snapshot_request', symbols)
   }
 
   setVisible(symbols: string[]) {
+    // visible_set 只声明屏幕可见集，不改变 monitored universe，故不进入 reconnect 的 trackedSymbols。
     this.sendCommand('visible_set', symbols)
   }
 
   private sendCommand(command: string, symbols: string[]) {
-    const frame = {
+    const encoded = this.encode(command, symbols)
+    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(encoded)
+    else { this.pendingCommands.push(encoded); this.connect() }
+  }
+
+  private sendNow(command: string, symbols: string[]) {
+    this.ws?.send(this.encode(command, symbols))
+  }
+
+  private encode(command: string, symbols: string[]) {
+    return JSON.stringify({
       schema_version: 1,
       protocol: 'terminal-message-v3',
       command,
       request_id: `${command}-${Date.now()}`,
       symbols,
-    }
-    const encoded = JSON.stringify(frame)
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(encoded)
-    } else {
-      this.pendingCommands.push(encoded)
-      this.connect()
-    }
+    })
   }
 
   private flushPending() {
-    if (this.ws?.readyState !== WebSocket.OPEN) {
-      return
-    }
-    for (const command of this.pendingCommands.splice(0)) {
-      this.ws.send(command)
-    }
+    if (this.ws?.readyState !== WebSocket.OPEN) return
+    for (const command of this.pendingCommands.splice(0)) this.ws.send(command)
   }
 
   private handleMessage(raw: string) {
-    const frame = JSON.parse(raw)
-    if (frame.type === 'snapshot') {
-      this.handlers.onSnapshot?.(frame.symbol, frame.payload)
-    }
-    if (frame.type === 'delta') {
-      this.handlers.onDelta?.(frame.symbol, frame.payload)
-    }
+    let frame: any
+    try { frame = JSON.parse(raw) } catch { return } // 坏帧静默丢弃，不中断后续消息
+    const seq = frame.seq != null ? Number(frame.seq) : 0
+    if (frame.type === 'snapshot') this.handlers.onSnapshot?.(frame.symbol, frame.payload, seq)
+    if (frame.type === 'delta') this.handlers.onDelta?.(frame.symbol, frame.payload, seq)
   }
 }
